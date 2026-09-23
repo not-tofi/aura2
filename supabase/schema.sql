@@ -33,15 +33,21 @@ BEGIN
   END IF;
 
   IF NOT EXISTS (
-    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'tipos' AND policyname = 'tipos_insert'
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'tipos' AND policyname = 'tipos_insert_admin'
   ) THEN
-    CREATE POLICY "tipos_insert" ON public.tipos FOR INSERT WITH CHECK (true);
+    CREATE POLICY "tipos_insert_admin" ON public.tipos FOR INSERT WITH CHECK (
+      auth.uid() IS NOT NULL AND auth.email() = 'admin@aura-nails.local'
+    );
   END IF;
 
   IF NOT EXISTS (
-    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'tipos' AND policyname = 'tipos_update'
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'tipos' AND policyname = 'tipos_update_admin'
   ) THEN
-    CREATE POLICY "tipos_update" ON public.tipos FOR UPDATE USING (true) WITH CHECK (true);
+    CREATE POLICY "tipos_update_admin" ON public.tipos FOR UPDATE USING (
+      auth.uid() IS NOT NULL AND auth.email() = 'admin@aura-nails.local'
+    ) WITH CHECK (
+      auth.uid() IS NOT NULL AND auth.email() = 'admin@aura-nails.local'
+    );
   END IF;
 
   IF NOT EXISTS (
@@ -51,14 +57,22 @@ BEGIN
   END IF;
 
   IF NOT EXISTS (
-    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'turnos' AND policyname = 'turnos_insert'
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'turnos' AND policyname = 'turnos_insert_public'
   ) THEN
-    CREATE POLICY "turnos_insert" ON public.turnos FOR INSERT WITH CHECK (true);
+    CREATE POLICY "turnos_insert_public" ON public.turnos FOR INSERT WITH CHECK (
+      nombre IS NOT NULL AND nombre <> '' AND
+      telefono IS NOT NULL AND telefono <> '' AND
+      fecha IS NOT NULL AND hora IS NOT NULL AND hora <> ''
+    );
   END IF;
 
   IF NOT EXISTS (
-    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'turnos' AND policyname = 'turnos_update'
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'turnos' AND policyname = 'turnos_update_admin'
   ) THEN
-    CREATE POLICY "turnos_update" ON public.turnos FOR UPDATE USING (true) WITH CHECK (true);
+    CREATE POLICY "turnos_update_admin" ON public.turnos FOR UPDATE USING (
+      auth.uid() IS NOT NULL AND auth.email() = 'admin@aura-nails.local'
+    ) WITH CHECK (
+      auth.uid() IS NOT NULL AND auth.email() = 'admin@aura-nails.local'
+    );
   END IF;
 END $$;

@@ -45,14 +45,24 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../assets/js/supabase-config.js"></script>
     <script>
-      const adminLogged = localStorage.getItem('adminSession');
-      if (adminLogged !== 'true') {
-        window.location.href = 'login.html';
+      async function verificarAccesoAdmin() {
+        if (!window.AURA_SUPABASE) {
+          window.location.href = 'login.html';
+          return;
+        }
+
+        await window.AURA_SUPABASE.ensureAdminAccess();
       }
 
-      document.getElementById('logoutBtn').addEventListener('click', () => {
+      document.getElementById('logoutBtn').addEventListener('click', async () => {
         localStorage.removeItem('adminSession');
+        if (window.auraSupabase) {
+          await window.auraSupabase.auth.signOut().catch(() => {});
+        }
+        window.location.href = 'login.html';
       });
+
+      verificarAccesoAdmin();
 
       async function renderTipos() {
         const client = window.auraSupabase;

@@ -24,11 +24,15 @@ window.AURA_SUPABASE = {
 
 5. Ejecutar el SQL de `supabase/schema.sql` en el SQL editor de Supabase.
 
-## Login demo admin
+## Login admin
 
-- usuario: `admin`
-- contraseña: `admin123`
+Crear una cuenta de administrador en Supabase Auth y usar ese correo para entrar al panel.
+
+Ejemplo recomendado:
+
+- email: `admin@aura-nails.local`
+- contraseña: la que definas en Supabase Auth
 
 ## Importante
 
-Esto ya está conectado para usar una base compartida de Supabase. Sin completar la configuración de Supabase, la app no puede guardar ni leer los turnos reales.
+Esto está pensado para usar Supabase como base de verdad. Sin completar la configuración y la autenticación de Supabase, la app no puede guardar ni leer los turnos reales.
