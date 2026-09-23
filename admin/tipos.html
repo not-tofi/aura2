@@ -85,6 +85,27 @@
         window.location.href = 'login.html';
       });
 
+      const menuBtn = document.querySelector('.btn-opciones');
+      const menuLateral = document.getElementById('menu-lateral');
+      const menuCerrar = document.querySelector('.menu-cerrar');
+
+      const toggleMenu = (isOpen) => {
+        if (!menuBtn || !menuLateral) return;
+        menuLateral.classList.toggle('open', isOpen);
+        menuBtn.setAttribute('aria-expanded', String(isOpen));
+        menuLateral.setAttribute('aria-hidden', String(!isOpen));
+      };
+
+      menuBtn?.addEventListener('click', () => {
+        const isOpen = menuLateral.classList.contains('open');
+        toggleMenu(!isOpen);
+      });
+
+      menuCerrar?.addEventListener('click', () => toggleMenu(false));
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') toggleMenu(false);
+      });
+
       verificarAccesoAdmin();
 
       async function renderTipos() {
