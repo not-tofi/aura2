@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tipos - Admin</title>
+    <style>
+      body { margin: 0; font-family: Arial, sans-serif; background: #fdf2f7; }
+      .layout { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+      .sidebar { background: #4d2a37; color: white; padding: 20px; }
+      .sidebar a { display: block; color: white; text-decoration: none; padding: 12px 10px; border-radius: 10px; margin: 8px 0; background: rgba(255,255,255,0.06); }
+      .main { padding: 28px; }
+      .panel { background: white; border-radius: 18px; padding: 22px; box-shadow: 0 12px 24px rgba(0,0,0,0.05); }
+      .tipo { border: 1px solid #f0dfe7; border-radius: 12px; padding: 16px; margin-top: 10px; }
+      input, button { padding: 10px 12px; border-radius: 10px; border: 1px solid #e7c7d5; font-size: 1rem; }
+      form { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
+      button { background: #d97ca2; color: white; border: none; cursor: pointer; }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <h2>Aura Nails</h2>
+        <a href="index.html">Inicio</a>
+        <a href="turnos.html">Turnos</a>
+        <a href="clientes.html">Clientes</a>
+        <a href="tipos.html">Tipos</a>
+        <a href="historial.html">Historial</a>
+        <a href="login.html" id="logoutBtn">Cerrar sesión</a>
+      </aside>
+
+      <main class="main">
+        <div class="panel">
+          <h1>Tipos de uña</h1>
+          <form id="formTipo">
+            <input id="nombreTipo" type="text" placeholder="Nombre del tipo" required />
+            <input id="precioTipo" type="number" placeholder="Precio" required />
+            <button type="submit">Agregar</button>
+          </form>
+          <div id="listaTipos"></div>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const adminLogged = localStorage.getItem('adminSession');
+      if (adminLogged !== 'true') {
+        window.location.href = 'login.html';
+      }
+
+      document.getElementById('logoutBtn').addEventListener('click', () => {
+        localStorage.removeItem('adminSession');
+      });
+
+      const tipos = [
+        { id: 1, nombre: 'Uñas XL', precio: 2500 },
+        { id: 2, nombre: 'Kapping', precio: 3200 },
+        { id: 3, nombre: 'Soft Gel', precio: 2800 }
+      ];
+
+      function renderTipos() {
+        document.getElementById('listaTipos').innerHTML = tipos.map(tipo => `
+          <div class="tipo">
+            <strong>${tipo.nombre}</strong><br>
+            Precio: $${tipo.precio}
+          </div>
+        `).join('');
+      }
+
+      document.getElementById('formTipo').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const nombre = document.getElementById('nombreTipo').value.trim();
+        const precio = Number(document.getElementById('precioTipo').value);
+
+        if (!nombre || !precio) return;
+
+        tipos.push({ id: Date.now(), nombre, precio });
+        document.getElementById('formTipo').reset();
+        renderTipos();
+      });
+
+      renderTipos();
+    </script>
+  </body>
+</html>

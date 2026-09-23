@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Historial - Admin</title>
+    <style>
+      body { margin: 0; font-family: Arial, sans-serif; background: #fdf2f7; }
+      .layout { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+      .sidebar { background: #4d2a37; color: white; padding: 20px; }
+      .sidebar a { display: block; color: white; text-decoration: none; padding: 12px 10px; border-radius: 10px; margin: 8px 0; background: rgba(255,255,255,0.06); }
+      .main { padding: 28px; }
+      .panel { background: white; border-radius: 18px; padding: 22px; box-shadow: 0 12px 24px rgba(0,0,0,0.05); }
+      .item { border: 1px solid #f0dfe7; border-radius: 12px; padding: 16px; margin-top: 10px; }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <h2>Aura Nails</h2>
+        <a href="index.html">Inicio</a>
+        <a href="turnos.html">Turnos</a>
+        <a href="clientes.html">Clientes</a>
+        <a href="tipos.html">Tipos</a>
+        <a href="historial.html">Historial</a>
+        <a href="login.html" id="logoutBtn">Cerrar sesión</a>
+      </aside>
+
+      <main class="main">
+        <div class="panel">
+          <h1>Historial</h1>
+          <div id="listaHistorial"></div>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const adminLogged = localStorage.getItem('adminSession');
+      if (adminLogged !== 'true') {
+        window.location.href = 'login.html';
+      }
+
+      document.getElementById('logoutBtn').addEventListener('click', () => {
+        localStorage.removeItem('adminSession');
+      });
+
+      const historial = [
+        { nombre: 'Ana', tipo: 'Kapping', fecha: '2026-09-20', estado: 'Realizado' },
+        { nombre: 'Lucia', tipo: 'French', fecha: '2026-09-18', estado: 'Cancelado' }
+      ];
+
+      document.getElementById('listaHistorial').innerHTML = historial.map(item => `
+        <div class="item">
+          <strong>${item.nombre}</strong><br>
+          Tipo: ${item.tipo}<br>
+          Fecha: ${item.fecha}<br>
+          Estado: ${item.estado}
+        </div>
+      `).join('');
+    </script>
+  </body>
+</html>
