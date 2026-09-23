@@ -3,6 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f7d6de" />
+    <meta name="description" content="Reservá tu turno en Aura Nails desde tu navegador o como app." />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Aura Nails" />
+    <link rel="manifest" href="../manifest.json" />
     <title>Reservar turno - Aura Nails</title>
     <style>
       * { box-sizing: border-box; }
@@ -76,6 +82,22 @@
         color: #9a2347;
         font-weight: 700;
       }
+      .install-btn {
+        display: none;
+        width: 100%;
+        margin-top: 18px;
+        background: #4d2a37;
+        color: white;
+        border: none;
+        border-radius: 12px;
+        padding: 12px 16px;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .install-btn.visible {
+        display: block;
+      }
     </style>
   </head>
   <body>
@@ -106,6 +128,7 @@
           <textarea id="notas" rows="3"></textarea>
 
           <button type="submit">Enviar</button>
+          <button id="installButton" class="install-btn" type="button">Instalar app</button>
         </form>
 
         <div id="error" class="error"></div>
@@ -116,6 +139,31 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../assets/js/supabase-config.js"></script>
     <script>
+      const installButton = document.getElementById('installButton');
+      let deferredPrompt = null;
+
+      if ('serviceWorker' in navigator) {
+        const swUrl = '../sw.js';
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register(swUrl).catch((error) => {
+            console.warn('Service worker no pudo registrarse:', error);
+          });
+        });
+      }
+
+      window.addEventListener('beforeinstallprompt', (event) => {
+        event.preventDefault();
+        deferredPrompt = event;
+        installButton.classList.add('visible');
+      });
+
+      installButton.addEventListener('click', async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        installButton.classList.remove('visible');
+      });
       const tipoSelect = document.getElementById('tipo');
       const fechaInput = document.getElementById('fecha');
       const horaSelect = document.getElementById('hora');
