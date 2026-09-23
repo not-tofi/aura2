@@ -34,6 +34,8 @@
       </main>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../assets/js/supabase-config.js"></script>
     <script>
       const adminLogged = localStorage.getItem('adminSession');
       if (adminLogged !== 'true') {
@@ -44,21 +46,59 @@
         localStorage.removeItem('adminSession');
       });
 
-      const clientes = [
-        { nombre: 'Ana', telefono: '1122334455', tipo: 'Kapping', fecha: '2026-09-22', estado: 'pendiente' },
-        { nombre: 'Lucia', telefono: '2233445566', tipo: 'French', fecha: '2026-09-22', estado: 'confirmado' },
-        { nombre: 'Gina', telefono: '3344556677', tipo: 'Uñas XL', fecha: '2026-09-23', estado: 'cancelado' }
-      ];
+      async function cargarClientes() {
+        const contenedor = document.getElementById('listaClientes');
+        const client = window.auraSupabase;
 
-      document.getElementById('listaClientes').innerHTML = clientes.map(c => `
-        <div class="cliente">
-          <strong>${c.nombre}</strong><br>
-          Tel: ${c.telefono}<br>
-          Tipo: ${c.tipo}<br>
-          Próximo turno: ${c.fecha}<br>
-          Estado: ${c.estado}
-        </div>
-      `).join('');
+        if (!client) {
+          contenedor.innerHTML = '<p>Falta configurar Supabase.</p>';
+          return;
+        }
+
+        const { data, error } = await client
+          .from('turnos')
+          .select('id, nombre, telefono, fecha, estado, tipo_id, tipos (id, nombre)')
+          .order('fecha', { ascending: false });
+
+        if (error) {
+          contenedor.innerHTML = '<p>No se pudieron cargar los clientes.</p>';
+          return;
+        }
+
+        const clientesUnicos = new Map();
+
+        (data || []).forEach((turno) => {
+          const key = turno.telefono || turno.nombre;
+          if (!clientesUnicos.has(key)) {
+            clientesUnicos.set(key, {
+              nombre: turno.nombre,
+              telefono: turno.telefono,
+              tipo: turno.tipos?.nombre || 'Sin tipo',
+              fecha: turno.fecha,
+              estado: turno.estado
+            });
+          }
+        });
+
+        const clientes = [...clientesUnicos.values()];
+
+        if (!clientes.length) {
+          contenedor.innerHTML = '<p>No hay clientes registrados todavía.</p>';
+          return;
+        }
+
+        contenedor.innerHTML = clientes.map((c) => `
+          <div class="cliente">
+            <strong>${c.nombre}</strong><br>
+            Tel: ${c.telefono}<br>
+            Tipo: ${c.tipo}<br>
+            Próximo turno: ${c.fecha}<br>
+            Estado: ${c.estado}
+          </div>
+        `).join('');
+      }
+
+      cargarClientes();
     </script>
   </body>
 </html>

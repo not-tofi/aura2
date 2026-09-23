@@ -34,6 +34,8 @@
       </main>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../assets/js/supabase-config.js"></script>
     <script>
       const adminLogged = localStorage.getItem('adminSession');
       if (adminLogged !== 'true') {
@@ -44,19 +46,42 @@
         localStorage.removeItem('adminSession');
       });
 
-      const historial = [
-        { nombre: 'Ana', tipo: 'Kapping', fecha: '2026-09-20', estado: 'Realizado' },
-        { nombre: 'Lucia', tipo: 'French', fecha: '2026-09-18', estado: 'Cancelado' }
-      ];
+      async function cargarHistorial() {
+        const contenedor = document.getElementById('listaHistorial');
+        const client = window.auraSupabase;
 
-      document.getElementById('listaHistorial').innerHTML = historial.map(item => `
-        <div class="item">
-          <strong>${item.nombre}</strong><br>
-          Tipo: ${item.tipo}<br>
-          Fecha: ${item.fecha}<br>
-          Estado: ${item.estado}
-        </div>
-      `).join('');
+        if (!client) {
+          contenedor.innerHTML = '<p>Falta configurar Supabase.</p>';
+          return;
+        }
+
+        const { data, error } = await client
+          .from('turnos')
+          .select('id, nombre, fecha, estado, tipo_id, tipos (id, nombre)')
+          .neq('estado', 'pendiente')
+          .order('fecha', { ascending: false });
+
+        if (error) {
+          contenedor.innerHTML = '<p>No se pudo cargar el historial.</p>';
+          return;
+        }
+
+        if (!data || !data.length) {
+          contenedor.innerHTML = '<p>Aún no hay historial disponible.</p>';
+          return;
+        }
+
+        contenedor.innerHTML = data.map((item) => `
+          <div class="item">
+            <strong>${item.nombre}</strong><br>
+            Tipo: ${item.tipos?.nombre || 'Sin tipo'}<br>
+            Fecha: ${item.fecha}<br>
+            Estado: ${item.estado}
+          </div>
+        `).join('');
+      }
+
+      cargarHistorial();
     </script>
   </body>
 </html>
