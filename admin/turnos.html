@@ -13,7 +13,12 @@
       .confirmado { background: #dff7e8; color: #1a6b44; }
       .cancelado { background: #f7d6dc; color: #8a1f3d; }
       .botones { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
-      .botones button { border: none; border-radius: 10px; padding: 8px 12px; cursor: pointer; background: #d97ca2; color: white; }
+      .botones button { border: none; border-radius: 10px; padding: 8px 12px; cursor: pointer; background: #d97ca2; color: white; min-height: 42px; }
+      @media (max-width: 480px) {
+        .panel { padding: 16px 14px; }
+        .turno { padding: 14px 12px; }
+        .botones { display: grid; grid-template-columns: 1fr; }
+      }
     </style>
   </head>
   <body>

@@ -17,16 +17,17 @@
         font-family: Arial, sans-serif;
         background: #fff6fa;
         color: #3d2a35;
+        padding: max(12px, env(safe-area-inset-top)) 12px max(18px, env(safe-area-inset-bottom));
       }
       .wrap {
         max-width: 760px;
-        margin: 40px auto;
-        padding: 24px;
+        margin: 0 auto;
+        padding: 0;
       }
       .card {
         background: white;
         border-radius: 20px;
-        padding: 26px;
+        padding: 22px 18px;
         box-shadow: 0 18px 42px rgba(117, 69, 88, 0.12);
       }
       h1 {
@@ -50,6 +51,7 @@
         border: 1px solid #ebc8d4;
         padding: 12px 14px;
         font-size: 1rem;
+        min-height: 44px;
       }
       textarea {
         resize: vertical;
@@ -62,6 +64,22 @@
         color: white;
         font-weight: 700;
         cursor: pointer;
+      }
+      @media (max-width: 480px) {
+        .card {
+          border-radius: 18px;
+          padding: 18px 14px;
+        }
+        h1 {
+          font-size: 2rem;
+        }
+        .sub {
+          font-size: 0.95rem;
+          margin-bottom: 18px;
+        }
+        label {
+          margin-top: 10px;
+        }
       }
       .success {
         display: none;
