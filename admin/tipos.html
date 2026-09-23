@@ -42,6 +42,7 @@
       </main>
     </div>
 
+    <script src="../assets/js/supabase-config.js"></script>
     <script>
       const adminLogged = localStorage.getItem('adminSession');
       if (adminLogged !== 'true') {
@@ -52,31 +53,49 @@
         localStorage.removeItem('adminSession');
       });
 
-      const tipos = [
-        { id: 1, nombre: 'Uñas XL', precio: 2500 },
-        { id: 2, nombre: 'Kapping', precio: 3200 },
-        { id: 3, nombre: 'Soft Gel', precio: 2800 }
-      ];
+      async function renderTipos() {
+        const client = window.auraSupabase;
+        const cont = document.getElementById('listaTipos');
 
-      function renderTipos() {
-        document.getElementById('listaTipos').innerHTML = tipos.map(tipo => `
+        if (!client) {
+          cont.innerHTML = '<p>Configura Supabase para ver los tipos.</p>';
+          return;
+        }
+
+        const { data, error } = await client.from('tipos').select('*').order('nombre');
+
+        if (error) {
+          cont.innerHTML = '<p>No se pudieron cargar los tipos.</p>';
+          return;
+        }
+
+        cont.innerHTML = (data || []).map((tipo) => `
           <div class="tipo">
             <strong>${tipo.nombre}</strong><br>
-            Precio: $${tipo.precio}
+            Precio: $${Number(tipo.precio).toFixed(2)}
           </div>
         `).join('');
       }
 
-      document.getElementById('formTipo').addEventListener('submit', (e) => {
+      document.getElementById('formTipo').addEventListener('submit', async (e) => {
         e.preventDefault();
+
+        const client = window.auraSupabase;
+        if (!client) {
+          return;
+        }
+
         const nombre = document.getElementById('nombreTipo').value.trim();
         const precio = Number(document.getElementById('precioTipo').value);
 
         if (!nombre || !precio) return;
 
-        tipos.push({ id: Date.now(), nombre, precio });
-        document.getElementById('formTipo').reset();
-        renderTipos();
+        const { error } = await client.from('tipos').insert([{ nombre, precio }]);
+
+        if (!error) {
+          document.getElementById('formTipo').reset();
+          await renderTipos();
+        }
       });
 
       renderTipos();

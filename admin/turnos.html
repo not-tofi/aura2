@@ -40,6 +40,7 @@
       </main>
     </div>
 
+    <script src="../assets/js/supabase-config.js"></script>
     <script>
       const adminLogged = localStorage.getItem('adminSession');
       if (adminLogged !== 'true') {
@@ -50,36 +51,55 @@
         localStorage.removeItem('adminSession');
       });
 
-      const turnos = [
-        { id: 1, nombre: 'Ana', telefono: '1122334455', tipo: 'Kapping', fecha: '2026-09-22', hora: '11:00', notas: 'Sin notas', estado: 'pendiente' },
-        { id: 2, nombre: 'Lucia', telefono: '2233445566', tipo: 'French', fecha: '2026-09-22', hora: '13:00', notas: '', estado: 'confirmado' },
-        { id: 3, nombre: 'Gina', telefono: '3344556677', tipo: 'Uñas XL', fecha: '2026-09-23', hora: '09:00', notas: 'Primera vez', estado: 'cancelado' }
-      ];
+      async function cargarTurnos() {
+        const client = window.auraSupabase;
+        const cont = document.getElementById('listaTurnos');
 
-      const cont = document.getElementById('listaTurnos');
-      cont.innerHTML = turnos.map((t) => `
-        <div class="turno">
-          <div class="estado ${t.estado}">${t.estado}</div>
-          <div><strong>${t.nombre}</strong></div>
-          <div>Tel: ${t.telefono}</div>
-          <div>Tipo: ${t.tipo}</div>
-          <div>Fecha: ${t.fecha}</div>
-          <div>Hora: ${t.hora}</div>
-          <div>Notas: ${t.notas || 'Sin notas'}</div>
-          <div class="botones">
-            <button onclick="cambiarEstado(${t.id}, 'pendiente')">Pendiente</button>
-            <button onclick="cambiarEstado(${t.id}, 'confirmado')">Confirmado</button>
-            <button onclick="cambiarEstado(${t.id}, 'cancelado')">Cancelado</button>
+        if (!client) {
+          cont.innerHTML = '<p>Configura Supabase para ver los turnos.</p>';
+          return;
+        }
+
+        const { data: turnos, error } = await client
+          .from('turnos')
+          .select('*, tipos (id, nombre)')
+          .order('fecha', { ascending: true })
+          .order('hora', { ascending: true });
+
+        if (error) {
+          cont.innerHTML = '<p>No se pudieron cargar los turnos.</p>';
+          return;
+        }
+
+        cont.innerHTML = (turnos || []).map((t) => `
+          <div class="turno">
+            <div class="estado ${t.estado}">${t.estado}</div>
+            <div><strong>${t.nombre}</strong></div>
+            <div>Tel: ${t.telefono}</div>
+            <div>Tipo: ${t.tipos?.nombre || 'Sin tipo'}</div>
+            <div>Fecha: ${t.fecha}</div>
+            <div>Hora: ${t.hora}</div>
+            <div>Notas: ${t.notas || 'Sin notas'}</div>
+            <div class="botones">
+              <button onclick="cambiarEstado(${t.id}, 'pendiente')">Pendiente</button>
+              <button onclick="cambiarEstado(${t.id}, 'confirmado')">Confirmado</button>
+              <button onclick="cambiarEstado(${t.id}, 'cancelado')">Cancelado</button>
+            </div>
           </div>
-        </div>
-      `).join('');
+        `).join('');
+      }
 
-      window.cambiarEstado = function (id, estado) {
-        const turno = turnos.find((t) => t.id === id);
-        if (!turno) return;
-        turno.estado = estado;
-        location.reload();
+      window.cambiarEstado = async function (id, estado) {
+        const client = window.auraSupabase;
+        if (!client) return;
+
+        const { error } = await client.from('turnos').update({ estado }).eq('id', id);
+        if (!error) {
+          await cargarTurnos();
+        }
       };
+
+      cargarTurnos();
     </script>
   </body>
 </html>

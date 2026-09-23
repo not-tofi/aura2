@@ -98,6 +98,7 @@
       </main>
     </div>
 
+    <script src="../assets/js/supabase-config.js"></script>
     <script>
       const adminLogged = localStorage.getItem('adminSession');
       if (adminLogged !== 'true') {
@@ -108,22 +109,27 @@
         localStorage.removeItem('adminSession');
       });
 
-      const tipos = [
-        { id: 1, nombre: 'Uñas XL', precio: 2500 },
-        { id: 2, nombre: 'Kapping', precio: 3200 },
-        { id: 3, nombre: 'Soft Gel', precio: 2800 },
-        { id: 4, nombre: 'French', precio: 3000 }
-      ];
+      async function cargarResumen() {
+        const client = window.auraSupabase;
+        if (!client) {
+          document.getElementById('countTipos').textContent = '0';
+          document.getElementById('countHoy').textContent = '0';
+          document.getElementById('countPendientes').textContent = '0';
+          return;
+        }
 
-      const turnos = [
-        { id: 1, nombre: 'Ana', fecha: '2026-09-22', hora: '11:00', estado: 'pendiente', tipo: 'Kapping' },
-        { id: 2, nombre: 'Lucia', fecha: '2026-09-22', hora: '13:00', estado: 'confirmado', tipo: 'French' },
-        { id: 3, nombre: 'Gina', fecha: '2026-09-23', hora: '09:00', estado: 'pendiente', tipo: 'Uñas XL' }
-      ];
+        const hoy = new Date().toISOString().slice(0, 10);
+        const { data: tipos = [], error: errorTipos } = await client.from('tipos').select('*');
+        const { data: turnos = [], error: errorTurnos } = await client.from('turnos').select('*');
 
-      document.getElementById('countTipos').textContent = tipos.length;
-      document.getElementById('countHoy').textContent = turnos.filter(t => t.fecha === '2026-09-22').length;
-      document.getElementById('countPendientes').textContent = turnos.filter(t => t.estado === 'pendiente').length;
+        if (!errorTipos && !errorTurnos) {
+          document.getElementById('countTipos').textContent = tipos.length;
+          document.getElementById('countHoy').textContent = turnos.filter(t => t.fecha === hoy).length;
+          document.getElementById('countPendientes').textContent = turnos.filter(t => t.estado === 'pendiente').length;
+        }
+      }
+
+      cargarResumen();
     </script>
   </body>
 </html>
