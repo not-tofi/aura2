@@ -3,6 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f7d6de" />
+    <meta name="description" content="Ingreso al panel administrativo de Aura Nails." />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Aura Admin" />
+    <link rel="manifest" href="../manifest.json" />
     <title>Admin - Aura Nails</title>
     <style>
       * { box-sizing: border-box; }
@@ -91,6 +96,13 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../assets/js/supabase-config.js"></script>
     <script>
+      if ('serviceWorker' in navigator) {
+        const swUrl = window.location.hostname === 'localhost' ? '../sw.js' : '/aura2/sw.js';
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register(swUrl).catch(() => {});
+        });
+      }
+
       const loginForm = document.getElementById('loginForm');
       const mensaje = document.getElementById('mensaje');
       const ADMIN_EMAIL = (window.AURA_SUPABASE?.adminEmail || '').trim().toLowerCase();
