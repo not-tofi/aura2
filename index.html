@@ -2,55 +2,39 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#f7d6de" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Aura Nails" />
-    <meta name="format-detection" content="telephone=no" />
-    <title>Aura Nails</title>
-    <link rel="manifest" href="./manifest.json" />
-    <link rel="icon" href="./assets/img/aura-icon.png" type="image/png" />
-    <link rel="apple-touch-icon" href="./assets/img/aura-icon.png" />
-    <link rel="stylesheet" href="./assets/css/styles.css" />
-    <script src="./assets/js/app.js" defer></script>
+    <meta http-equiv="refresh" content="0; url=./public/reservar.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Redirigiendo a reservar turno</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        font-family: Arial, sans-serif;
+        background: #fff6fa;
+        color: #3d2a35;
+        text-align: center;
+      }
+      .msg {
+        background: white;
+        padding: 28px 34px;
+        border-radius: 18px;
+        box-shadow: 0 18px 42px rgba(117, 69, 88, 0.12);
+      }
+      a {
+        color: #d97ca2;
+        font-weight: bold;
+      }
+    </style>
+    <script>
+      window.location.replace('./public/reservar.html');
+    </script>
   </head>
-  <body data-page="home">
-    <button id="abrir-menu" class="btn-opciones" type="button" aria-expanded="false" aria-controls="menu-lateral">
-      <span class="opcion" aria-label="Abrir menú"></span>
-      <span class="logoo" aria-label="Logo dentro del botón"></span>
-      <p>menu</p>
-    </button>
-
-    <div id="menu-overlay" class="menu-overlay" aria-hidden="true"></div>
-
-    <aside id="menu-lateral" class="menu-lateral" aria-label="Menú lateral" aria-hidden="true">
-      <div class="menu-header">
-        <h3>Menú</h3>
-      </div>
-
-      <nav class="menu-nav" aria-label="Menú principal">
-        <a href="./index.html" class="active">Inicio</a>
-        <a href="./pages/turnos.html">Sala</a>
-        <a href="./pages/generarturno.html">Agregar turno</a>
-        <a href="./pages/clientes.html">Clientes</a>
-        <a href="./pages/tipos.html">Tipos</a>
-        <a href="./pages/cuentabancaria.html">Cuenta</a>
-        <a href="./pages/historial.html">Historial</a>
-      </nav>
-    </aside>
-
-    <div class="app-shell">
-      <main class="content">
-        <section class="card">
-          <h2>Resumen</h2>
-          <div id="homeResumen"></div>
-        </section>
-
-
-      </main>
+  <body>
+    <div class="msg">
+      <p>Redirigiendo a la reserva de turno...</p>
+      <p><a href="./public/reservar.html">Click aquí si no se carga automáticamente</a></p>
     </div>
-
-    <div class="creator-watermark">© Alcorta Emir</div>
   </body>
 </html>
