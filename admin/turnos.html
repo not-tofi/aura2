@@ -4,35 +4,58 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Turnos - Admin</title>
+    <link rel="stylesheet" href="../assets/css/styles.css" />
     <style>
-      body { margin: 0; font-family: Arial, sans-serif; background: #fdf2f7; }
-      .layout { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
-      .sidebar { background: #4d2a37; color: white; padding: 20px; }
-      .sidebar a { display: block; color: white; text-decoration: none; padding: 12px 10px; border-radius: 10px; margin: 8px 0; background: rgba(255,255,255,0.06); }
-      .main { padding: 28px; }
-      .panel { background: white; border-radius: 18px; padding: 22px; box-shadow: 0 12px 24px rgba(0,0,0,0.05); }
+      .panel { background: rgba(255,255,255,0.82); border-radius: 24px; padding: 22px; box-shadow: 0 10px 28px rgba(120,88,75,0.08); }
       .turno { border: 1px solid #f1d7e3; padding: 16px; border-radius: 12px; margin-top: 12px; }
       .estado { display: inline-block; padding: 6px 10px; border-radius: 999px; font-size: 0.8rem; font-weight: 700; margin-bottom: 8px; }
       .pendiente { background: #ffe8bd; color: #8b5d00; }
       .confirmado { background: #dff7e8; color: #1a6b44; }
       .cancelado { background: #f7d6dc; color: #8a1f3d; }
       .botones { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
-      button { border: none; border-radius: 10px; padding: 8px 12px; cursor: pointer; }
+      .botones button { border: none; border-radius: 10px; padding: 8px 12px; cursor: pointer; background: #d97ca2; color: white; }
     </style>
   </head>
   <body>
-    <div class="layout">
-      <aside class="sidebar">
-        <h2>Aura Nails</h2>
+    <button class="btn-opciones" type="button" aria-expanded="false" aria-label="Abrir menú">
+      <span class="logoo" aria-hidden="true"></span>
+      <p>menu</p>
+    </button>
+
+    <nav class="menu-lateral" id="menu-lateral" aria-hidden="true">
+      <div class="menu-header">
+        <h3>Aura Nails</h3>
+        <button class="menu-cerrar" type="button" aria-label="Cerrar menú">×</button>
+      </div>
+      <div class="menu-nav">
         <a href="index.html">Inicio</a>
         <a href="turnos.html">Turnos</a>
         <a href="clientes.html">Clientes</a>
         <a href="tipos.html">Tipos</a>
         <a href="historial.html">Historial</a>
         <a href="login.html" id="logoutBtn">Cerrar sesión</a>
-      </aside>
+      </div>
+    </nav>
 
-      <main class="main">
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark">✦</div>
+          <div>
+            <h1>Aura Nails</h1>
+            <p>Panel administrativo</p>
+          </div>
+        </div>
+        <nav class="main-nav">
+          <a href="index.html">Inicio</a>
+          <a href="turnos.html" class="active">Turnos</a>
+          <a href="clientes.html">Clientes</a>
+          <a href="tipos.html">Tipos</a>
+          <a href="historial.html">Historial</a>
+        </nav>
+      </header>
+
+      <main class="content">
         <div class="panel">
           <h1>Turnos</h1>
           <div id="listaTurnos"></div>
