@@ -2,11 +2,14 @@
   "name": "Aura Nails",
   "short_name": "Aura",
   "description": "Gestión de turnos de Aura Nails",
-  "start_url": "./",
-  "scope": "./",
+  "id": "/aura2/",
+  "start_url": "/aura2/",
+  "scope": "/aura2/",
   "display": "standalone",
+  "display_override": ["standalone", "browser"],
   "background_color": "#f9f5f3",
   "theme_color": "#f7d6de",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "assets/img/aura-icon.png",
