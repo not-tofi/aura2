@@ -24,10 +24,41 @@ create index if not exists turnos_estado_idx on public.turnos (estado);
 alter table public.tipos enable row level security;
 alter table public.turnos enable row level security;
 
-create policy if not exists "tipos_read" on public.tipos for select using (true);
-create policy if not exists "tipos_insert" on public.tipos for insert with check (true);
-create policy if not exists "tipos_update" on public.tipos for update using (true) with check (true);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'tipos' AND policyname = 'tipos_read'
+  ) THEN
+    CREATE POLICY "tipos_read" ON public.tipos FOR SELECT USING (true);
+  END IF;
 
-create policy if not exists "turnos_read" on public.turnos for select using (true);
-create policy if not exists "turnos_insert" on public.turnos for insert with check (true);
-create policy if not exists "turnos_update" on public.turnos for update using (true) with check (true);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'tipos' AND policyname = 'tipos_insert'
+  ) THEN
+    CREATE POLICY "tipos_insert" ON public.tipos FOR INSERT WITH CHECK (true);
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'tipos' AND policyname = 'tipos_update'
+  ) THEN
+    CREATE POLICY "tipos_update" ON public.tipos FOR UPDATE USING (true) WITH CHECK (true);
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'turnos' AND policyname = 'turnos_read'
+  ) THEN
+    CREATE POLICY "turnos_read" ON public.turnos FOR SELECT USING (true);
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'turnos' AND policyname = 'turnos_insert'
+  ) THEN
+    CREATE POLICY "turnos_insert" ON public.turnos FOR INSERT WITH CHECK (true);
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'turnos' AND policyname = 'turnos_update'
+  ) THEN
+    CREATE POLICY "turnos_update" ON public.turnos FOR UPDATE USING (true) WITH CHECK (true);
+  END IF;
+END $$;
