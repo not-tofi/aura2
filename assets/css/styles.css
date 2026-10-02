@@ -195,6 +195,12 @@ h1, h2, h3, h4, h5, h6 {
   background: rgba(255,255,255,0.18);
 }
 
+@media (max-width: 767px) {
+  .main-nav {
+    display: none;
+  }
+}
+
 .btn-opciones {
   position: fixed;
   left: calc(12px + env(safe-area-inset-left));
@@ -970,5 +976,11 @@ button.borrar {
   .btn-opciones {
     left: 8px;
     top: calc(10px + env(safe-area-inset-top));
+  }
+}
+
+@media (max-width: 1252px) {
+  body.admin-page .app-shell {
+    padding-top: calc(100px + env(safe-area-inset-top));
   }
 }
