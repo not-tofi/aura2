@@ -125,14 +125,6 @@ h1, h2, h3, h4, h5, h6 {
     min-width: 64px;
   }
 
-  .menu-lateral {
-    left: 12px;
-    top: 92px;
-    width: min(84vw, 280px);
-    max-height: 72vh;
-    border-radius: 18px;
-  }
-
   .content {
     gap: 12px;
   }
@@ -326,6 +318,19 @@ h1, h2, h3, h4, h5, h6 {
 
 .menu-lateral.open {
   transform: translateX(0);
+}
+
+@media (max-width: 767px) {
+  .menu-lateral {
+    left: 0;
+    top: 0;
+    width: min(300px, 84vw);
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100vh;
+    padding: calc(18px + env(safe-area-inset-top)) 14px calc(18px + env(safe-area-inset-bottom));
+    border-radius: 0 18px 18px 0;
+  }
 }
 
 #opciones-salidas[hidden] {
@@ -939,12 +944,10 @@ button.borrar {
 
 @media (max-width: 500px) {
   body {
-    padding-left: 78px;
     padding-top: max(12px, env(safe-area-inset-top));
   }
 
   .app-shell {
-    width: min(1100px, calc(100vw - 96px));
     padding-left: 8px;
     padding-right: 8px;
     padding-top: calc(20px + env(safe-area-inset-top));
@@ -962,11 +965,6 @@ button.borrar {
 
   .brand {
     align-items: flex-start;
-  }
-
-  .menu-lateral {
-    left: 8px;
-    width: min(230px, 76vw);
   }
 
   .btn-opciones {
