@@ -1,11 +1,14 @@
-const CACHE_NAME = 'aura-nails-v2';
+const CACHE_NAME = 'aura-nails-v3';
 const ASSETS = [
   './',
   './index.html',
+  './public/aura.html',
+  './public/disenios.html',
   './public/reservar.html',
   './public/gracias.html',
   './manifest.json',
   './assets/css/styles.css',
+  './assets/css/home.css',
   './assets/js/supabase-config.js',
   './assets/img/aura-icon.png'
 ];

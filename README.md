@@ -4,6 +4,9 @@
 
 - `public/reservar.html`: página pública para que un cliente reserve un turno.
 - `public/gracias.html`: pantalla de confirmación.
+- `public/aura.html`: información sobre Aura y sus redes.
+- `public/disenios.html`: galería de diseños de uñas.
+- `index.html`: portada con accesos a reservas, información y diseños.
 - `admin/*.html`: panel administrativo.
 - `supabase/schema.sql`: esquema de base de datos para Supabase.
 - `assets/js/supabase-config.js`: configuración base para Supabase.

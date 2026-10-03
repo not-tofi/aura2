@@ -1,43 +1,57 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="refresh" content="0; url=./public/reservar.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#f7d6de" />
-    <meta name="description" content="Aura Nails - reserva de turnos." />
+    <meta name="theme-color" content="#f4eee7" />
+    <meta name="description" content="Aura Nails: reservá tu turno, conocé Aura y descubrí diseños de uñas." />
     <link rel="manifest" href="./manifest.json" />
-    <title>Redirigiendo a reservar turno</title>
-    <style>
-      body {
-        margin: 0;
-        min-height: 100vh;
-        display: grid;
-        place-items: center;
-        font-family: Arial, sans-serif;
-        background: #fff6fa;
-        color: #3d2a35;
-        text-align: center;
-      }
-      .msg {
-        background: white;
-        padding: 28px 34px;
-        border-radius: 18px;
-        box-shadow: 0 18px 42px rgba(117, 69, 88, 0.12);
-      }
-      a {
-        color: #d97ca2;
-        font-weight: bold;
-      }
-    </style>
-    <script>
-      window.location.replace('./public/reservar.html');
-    </script>
+    <link rel="icon" href="./assets/img/aura-icon.png" type="image/png" />
+    <link rel="stylesheet" href="./assets/css/home.css" />
+    <title>Aura Nails — Un espacio para vos</title>
   </head>
   <body>
-    <div class="msg">
-      <p>Redirigiendo a la reserva de turno...</p>
-      <p><a href="./public/reservar.html">Click aquí si no se carga automáticamente</a></p>
-    </div>
+    <main class="home">
+      <header class="brand">
+        <img class="brand__logo" src="./assets/img/aura-icon.png" alt="Logo de Aura" />
+        <span class="brand__name">AURA</span>
+        <span class="brand__caption">NAIL STUDIO</span>
+      </header>
+
+      <section class="welcome" aria-labelledby="welcome-title">
+        <p class="eyebrow">UN MOMENTO PARA VOS</p>
+        <h1 id="welcome-title">Bienvenida a <em>Aura</em></h1>
+        <p class="welcome__copy">Encontrá tu próximo diseño, conocé nuestro espacio y reservá tu momento.</p>
+      </section>
+
+      <nav class="home-links" aria-label="Explorá Aura">
+        <a class="home-link home-link--booking" href="./public/reservar.html">
+          <span class="home-link__number">01</span>
+          <span class="home-link__text">
+            <strong>Reservá tu turno</strong>
+            <span>Elegí el servicio y el horario para vos</span>
+          </span>
+          <span class="home-link__arrow" aria-hidden="true">↗</span>
+        </a>
+        <a class="home-link" href="./public/aura.html">
+          <span class="home-link__number">02</span>
+          <span class="home-link__text">
+            <strong>Aura y nuestras redes</strong>
+            <span>Conocé el estudio y encontranos</span>
+          </span>
+          <span class="home-link__arrow" aria-hidden="true">↗</span>
+        </a>
+        <a class="home-link" href="./public/disenios.html">
+          <span class="home-link__number">03</span>
+          <span class="home-link__text">
+            <strong>Diseños de uñas</strong>
+            <span>Inspirate para tu próximo set</span>
+          </span>
+          <span class="home-link__arrow" aria-hidden="true">↗</span>
+        </a>
+      </nav>
+
+      <footer class="home-footer">Belleza en cada detalle <span aria-hidden="true">✳</span></footer>
+    </main>
   </body>
 </html>
