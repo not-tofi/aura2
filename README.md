@@ -39,24 +39,3 @@ Ejemplo recomendado:
 ## Importante
 
 Esto está pensado para usar Supabase como base de verdad. Sin completar la configuración y la autenticación de Supabase, la app no puede guardar ni leer los turnos reales.
-
-## Publicar en GitHub Pages
-
-El workflow `.github/workflows/deploy-pages.yml` publica el sitio automáticamente cuando se actualiza la rama `main`, o manualmente desde la pestaña **Actions**. No hace falta instalar dependencias ni generar una compilación.
-
-Para habilitarlo en GitHub:
-
-1. Abrir **Settings > Pages** del repositorio.
-2. En **Build and deployment**, elegir **GitHub Actions** como origen.
-3. Subir los cambios a `main` y esperar a que termine el workflow **Deploy to GitHub Pages**.
-
-Para este repositorio, la dirección del sitio será <https://not-tofi.github.io/aura2/>.
-
-### Supabase en producción
-
-GitHub Pages sólo aloja archivos estáticos; Supabase sigue siendo necesario para las reservas y el acceso administrativo. En **Authentication > URL Configuration** de Supabase, configurar:
-
-- **Site URL:** `https://not-tofi.github.io/aura2/`
-- **Redirect URLs:** `https://not-tofi.github.io/aura2/**`
-
-La clave `anon`/publishable usada por el navegador es pública. Nunca publicar una clave `service_role`; proteger los datos con Row Level Security (RLS) y políticas adecuadas en Supabase.
