@@ -11,15 +11,143 @@
     <title>Admin - Aura Nails</title>
     <link rel="stylesheet" href="../assets/css/styles.css" />
     <style>
-      .panel { background: rgba(255,255,255,0.82); border-radius: 24px; padding: 22px; box-shadow: 0 10px 28px rgba(120,88,75,0.08); }
-      .stats { display: grid; grid-template-columns: repeat(3, minmax(180px, 1fr)); gap: 16px; margin-top: 20px; }
-      .stat { background: #fff6fa; border-radius: 14px; padding: 18px; border: 1px solid #f0d5df; }
-      .stat strong { display: block; color: #684555; margin-bottom: 10px; }
-      .stat span { font-size: 1.8rem; font-weight: 700; color: #4d2a37; }
+      .dashboard { display: grid; gap: 18px; }
+      .welcome-panel {
+        position: relative;
+        display: flex;
+        min-height: 210px;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        overflow: hidden;
+        padding: clamp(24px, 5vw, 42px);
+        border: 1px solid rgba(255,255,255,.75);
+        border-radius: 26px;
+        background: linear-gradient(120deg, #fffaf6 0%, #f3e1d8 100%);
+        box-shadow: var(--shadow);
+      }
+      .welcome-copy { position: relative; z-index: 1; }
+      .welcome-kicker {
+        margin-bottom: 7px;
+        color: var(--primary);
+        font-size: .68rem;
+        font-weight: 800;
+        letter-spacing: .18em;
+        text-transform: uppercase;
+      }
+      .welcome-panel h1 { color: var(--text); font-size: clamp(2rem, 5vw, 3rem); line-height: 1; }
+      .welcome-panel h1 em { color: var(--primary); font-weight: 500; }
+      .welcome-date { margin-top: 11px; color: var(--muted); font-size: .83rem; text-transform: capitalize; }
+      .welcome-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+      .welcome-actions a, .action-link {
+        display: inline-flex;
+        min-height: 42px;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 9px 15px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: rgba(255,255,255,.72);
+        color: var(--primary-strong);
+        font-size: .75rem;
+        font-weight: 800;
+        text-decoration: none;
+        transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+      }
+      .welcome-actions a:first-child { border-color: transparent; background: var(--primary-strong); color: white; }
+      .welcome-actions a:hover, .action-link:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(94,66,56,.12); }
+      .welcome-mark {
+        width: clamp(96px, 18vw, 156px);
+        height: clamp(96px, 18vw, 156px);
+        flex: 0 0 auto;
+        border: 8px solid rgba(255,255,255,.56);
+        border-radius: 50%;
+        object-fit: cover;
+        box-shadow: 0 14px 34px rgba(94,66,56,.14);
+      }
+      .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+      .stat {
+        position: relative;
+        min-height: 128px;
+        overflow: hidden;
+        padding: 19px;
+        border: 1px solid rgba(231,212,202,.9);
+        border-radius: 20px;
+        background: var(--surface-strong);
+        box-shadow: 0 8px 22px rgba(94,66,56,.06);
+        animation: rise-in .45s both;
+      }
+      .stat:nth-child(2) { animation-delay: .06s; }
+      .stat:nth-child(3) { animation-delay: .12s; }
+      .stat:nth-child(4) { animation-delay: .18s; }
+      .stat::after {
+        position: absolute;
+        right: -18px;
+        bottom: -28px;
+        width: 86px;
+        height: 86px;
+        border: 1px solid rgba(185,122,92,.13);
+        border-radius: 50%;
+        box-shadow: 0 0 0 12px rgba(185,122,92,.04);
+        content: "";
+      }
+      .stat-label { display: block; color: var(--muted); font-size: .74rem; font-weight: 700; }
+      .stat-value { display: block; margin-top: 12px; color: var(--primary-strong); font-size: 2rem; font-weight: 800; line-height: 1; }
+      .dashboard-lower { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(230px, .8fr); gap: 16px; }
+      .panel {
+        min-width: 0;
+        padding: 22px;
+        border: 1px solid rgba(231,212,202,.9);
+        border-radius: 22px;
+        background: rgba(255,255,255,.82);
+        box-shadow: 0 10px 28px rgba(120,88,75,.07);
+      }
+      .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+      .section-heading h2, .action-panel h2 { color: var(--text); font-size: 1.55rem; }
+      .section-heading a { color: var(--primary-strong); font-size: .73rem; font-weight: 800; text-decoration: none; }
+      .agenda-list { display: grid; gap: 9px; }
+      .agenda-item {
+        display: grid;
+        grid-template-columns: 62px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 13px;
+        padding: 12px;
+        border: 1px solid rgba(231,212,202,.7);
+        border-radius: 15px;
+        background: #fffdfa;
+      }
+      .agenda-time { color: var(--primary-strong); font-size: .9rem; font-weight: 800; }
+      .agenda-name { overflow: hidden; color: var(--text); font-size: .82rem; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+      .agenda-service { margin-top: 2px; color: var(--muted); font-size: .69rem; }
+      .agenda-status { padding: 5px 9px; border-radius: 999px; background: #f7eddc; color: #8c6236; font-size: .64rem; font-weight: 800; white-space: nowrap; }
+      .agenda-status.confirmado { background: #e4f1e8; color: #427250; }
+      .agenda-status.cancelado { background: #f7e5e3; color: #9b5149; }
+      .agenda-empty, .agenda-error { padding: 20px 8px; color: var(--muted); font-size: .83rem; text-align: center; }
+      .action-panel p { margin: 7px 0 17px; color: var(--muted); font-size: .78rem; line-height: 1.6; }
+      .action-list { display: grid; gap: 9px; }
+      .action-link { justify-content: flex-start; border-radius: 13px; padding: 11px 13px; }
+      .action-link span { display: grid; gap: 2px; }
+      .action-link strong { font-size: .75rem; }
+      .action-link small { color: var(--muted); font-size: .65rem; font-weight: 500; }
+      @keyframes rise-in { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: translateY(0); } }
       @media (max-width: 760px) {
-        .panel { padding: 16px 14px; }
-        .stats { grid-template-columns: 1fr; }
-        .stat { padding: 14px; }
+        .welcome-panel { min-height: 0; padding: 24px 20px; }
+        .welcome-mark { width: 82px; height: 82px; border-width: 5px; }
+        .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+        .stat { min-height: 108px; padding: 15px; }
+        .stat-value { font-size: 1.7rem; }
+        .dashboard-lower { grid-template-columns: 1fr; }
+      }
+      @media (max-width: 420px) {
+        .welcome-mark { display: none; }
+        .panel { padding: 17px 14px; }
+        .agenda-item { grid-template-columns: 50px minmax(0, 1fr); gap: 9px; }
+        .agenda-status { grid-column: 2; justify-self: start; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .stat { animation: none; }
+        .welcome-actions a, .action-link { transition: none; }
       }
     </style>
   </head>
@@ -46,21 +174,59 @@
 
     <div class="app-shell">
       <main class="content">
-        <div class="panel">
-          <h1>Resumen</h1>
-          <div class="stats">
-            <div class="stat">
-              <strong>Tipos</strong>
-              <span id="countTipos">0</span>
+        <div class="dashboard">
+          <section class="welcome-panel" aria-labelledby="dashboardTitle">
+            <div class="welcome-copy">
+              <p class="welcome-kicker">Tu espacio de trabajo</p>
+              <h1 id="dashboardTitle">Hola, <em>Aura</em></h1>
+              <p class="welcome-date" id="dashboardDate"></p>
+              <div class="welcome-actions">
+                <a href="turnos.html">Abrir agenda <span aria-hidden="true">↗</span></a>
+                <a href="tipos.html">Gestionar servicios</a>
+              </div>
             </div>
-            <div class="stat">
-              <strong>Turnos hoy</strong>
-              <span id="countHoy">0</span>
-            </div>
-            <div class="stat">
-              <strong>Pendientes</strong>
-              <span id="countPendientes">0</span>
-            </div>
+            <img class="welcome-mark" src="../assets/img/aura-icon.png" alt="" />
+          </section>
+
+          <section class="stats" aria-label="Resumen de actividad">
+            <article class="stat">
+              <span class="stat-label">Turnos de hoy</span>
+              <span class="stat-value" id="countHoy">—</span>
+            </article>
+            <article class="stat">
+              <span class="stat-label">Pendientes</span>
+              <span class="stat-value" id="countPendientes">—</span>
+            </article>
+            <article class="stat">
+              <span class="stat-label">Confirmados hoy</span>
+              <span class="stat-value" id="countConfirmados">—</span>
+            </article>
+            <article class="stat">
+              <span class="stat-label">Servicios activos</span>
+              <span class="stat-value" id="countTipos">—</span>
+            </article>
+          </section>
+
+          <div class="dashboard-lower">
+            <section class="panel" aria-labelledby="agendaTitle">
+              <div class="section-heading">
+                <h2 id="agendaTitle">Agenda de hoy</h2>
+                <a href="turnos.html">Ver todos <span aria-hidden="true">→</span></a>
+              </div>
+              <div id="agendaHoy" class="agenda-list" aria-live="polite">
+                <p class="agenda-empty">Cargando agenda…</p>
+              </div>
+            </section>
+
+            <aside class="panel action-panel">
+              <h2>Accesos rápidos</h2>
+              <p>Todo lo que necesitás para mantener tu estudio al día.</p>
+              <div class="action-list">
+                <a class="action-link" href="turnos.html"><span>◷</span><span><strong>Administrar turnos</strong><small>Revisá y actualizá la agenda</small></span></a>
+                <a class="action-link" href="clientes.html"><span>♡</span><span><strong>Ver clientes</strong><small>Consultá sus datos de contacto</small></span></a>
+                <a class="action-link" href="tipos.html"><span>✳</span><span><strong>Editar servicios</strong><small>Actualizá tipos y precios</small></span></a>
+              </div>
+            </aside>
           </div>
         </div>
       </main>
@@ -79,10 +245,10 @@
       async function verificarAccesoAdmin() {
         if (!window.AURA_SUPABASE) {
           window.location.href = 'login.html';
-          return;
+          return false;
         }
 
-        await window.AURA_SUPABASE.ensureAdminAccess();
+        return window.AURA_SUPABASE.ensureAdminAccess();
       }
 
       document.getElementById('logoutBtn').addEventListener('click', async () => {
@@ -114,29 +280,96 @@
         if (event.key === 'Escape') toggleMenu(false);
       });
 
-      verificarAccesoAdmin();
+      function fechaLocalISO() {
+        const hoy = new Date();
+        const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+        const dia = String(hoy.getDate()).padStart(2, '0');
+        return `${hoy.getFullYear()}-${mes}-${dia}`;
+      }
 
-      async function cargarResumen() {
-        const client = window.auraSupabase;
-        if (!client) {
-          document.getElementById('countTipos').textContent = '0';
-          document.getElementById('countHoy').textContent = '0';
-          document.getElementById('countPendientes').textContent = '0';
+      function renderAgenda(turnos) {
+        const agenda = document.getElementById('agendaHoy');
+        agenda.replaceChildren();
+
+        if (turnos.length === 0) {
+          const empty = document.createElement('p');
+          empty.className = 'agenda-empty';
+          empty.textContent = 'Todavía no hay turnos para hoy. ¡Un buen momento para preparar el estudio!';
+          agenda.appendChild(empty);
           return;
         }
 
-        const hoy = new Date().toISOString().slice(0, 10);
-        const { data: tipos = [], error: errorTipos } = await client.from('tipos').select('*');
-        const { data: turnos = [], error: errorTurnos } = await client.from('turnos').select('*');
+        const nombresEstado = {
+          pendiente: 'Pendiente',
+          confirmado: 'Confirmado',
+          realizado: 'Realizado',
+          cancelado: 'Cancelado'
+        };
 
-        if (!errorTipos && !errorTurnos) {
-          document.getElementById('countTipos').textContent = tipos.length;
-          document.getElementById('countHoy').textContent = turnos.filter(t => t.fecha === hoy).length;
-          document.getElementById('countPendientes').textContent = turnos.filter(t => t.estado === 'pendiente').length;
-        }
+        turnos.forEach((turno) => {
+          const item = document.createElement('article');
+          item.className = 'agenda-item';
+
+          const hora = document.createElement('time');
+          hora.className = 'agenda-time';
+          hora.textContent = turno.hora || '--:--';
+
+          const detail = document.createElement('div');
+          const nombre = document.createElement('div');
+          nombre.className = 'agenda-name';
+          nombre.textContent = turno.nombre || 'Sin nombre';
+          const servicio = document.createElement('div');
+          servicio.className = 'agenda-service';
+          servicio.textContent = turno.tipos?.nombre || 'Servicio sin especificar';
+          detail.append(nombre, servicio);
+
+          const estado = document.createElement('span');
+          estado.className = `agenda-status ${['confirmado', 'cancelado'].includes(turno.estado) ? turno.estado : ''}`;
+          estado.textContent = nombresEstado[turno.estado] || 'Pendiente';
+
+          item.append(hora, detail, estado);
+          agenda.appendChild(item);
+        });
       }
 
-      cargarResumen();
+      async function cargarResumen() {
+        const client = window.auraSupabase;
+        const agenda = document.getElementById('agendaHoy');
+
+        document.getElementById('dashboardDate').textContent =
+          new Intl.DateTimeFormat('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
+
+        if (!client) {
+          agenda.innerHTML = '<p class="agenda-error">No se pudo conectar con la base de datos. Revisá la configuración de Supabase.</p>';
+          return;
+        }
+
+        const hoy = fechaLocalISO();
+        const [tiposResult, turnosResult, pendientesResult] = await Promise.all([
+          client.from('tipos').select('id', { count: 'exact', head: true }),
+          client.from('turnos').select('id, nombre, telefono, hora, estado, tipos (nombre)').eq('fecha', hoy).order('hora'),
+          client.from('turnos').select('id', { count: 'exact', head: true }).eq('estado', 'pendiente')
+        ]);
+
+        const error = tiposResult.error || turnosResult.error || pendientesResult.error;
+        if (error) {
+          console.error('No se pudo cargar el resumen del panel:', error);
+          agenda.innerHTML = '<p class="agenda-error">No se pudo cargar la actividad. Volvé a intentarlo en unos minutos.</p>';
+          return;
+        }
+
+        const turnosHoy = turnosResult.data || [];
+        document.getElementById('countTipos').textContent = String(tiposResult.count ?? 0);
+        document.getElementById('countHoy').textContent = String(turnosHoy.length);
+        document.getElementById('countPendientes').textContent = String(pendientesResult.count ?? 0);
+        document.getElementById('countConfirmados').textContent =
+          String(turnosHoy.filter((turno) => turno.estado === 'confirmado').length);
+        renderAgenda(turnosHoy);
+      }
+
+      verificarAccesoAdmin().then((autorizado) => {
+        if (autorizado) return cargarResumen();
+      });
     </script>
   </body>
 </html>

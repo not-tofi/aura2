@@ -40,7 +40,7 @@
         padding: max(24px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom));
       }
       .wrap {
-        width: min(100%, 820px);
+        width: min(100%, 1040px);
         margin: 0 auto;
         padding: clamp(12px, 4vh, 44px) 0;
       }
@@ -70,11 +70,44 @@
         position: relative;
         z-index: 1;
       }
+      .booking-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 260px;
+        align-items: start;
+        gap: clamp(28px, 5vw, 60px);
+      }
+      .brand-lockup {
+        display: inline-flex;
+        align-items: center;
+        gap: 11px;
+        margin-bottom: clamp(28px, 5vh, 46px);
+        color: #48362f;
+        text-decoration: none;
+      }
+      .brand-lockup img {
+        width: 48px;
+        height: 48px;
+        border: 1px solid rgba(167,119,105,.22);
+        border-radius: 50%;
+        object-fit: cover;
+      }
+      .brand-lockup span { display: grid; gap: 2px; }
+      .brand-lockup strong {
+        font-family: "Cormorant Garamond", Georgia, serif;
+        font-size: 1.15rem;
+        letter-spacing: .15em;
+      }
+      .brand-lockup small {
+        color: var(--muted);
+        font-size: .58rem;
+        font-weight: 800;
+        letter-spacing: .2em;
+      }
       .back-link {
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        margin-bottom: clamp(30px, 6vh, 54px);
+        margin-bottom: 24px;
         color: var(--muted);
         font-size: .8rem;
         font-weight: 700;
@@ -153,6 +186,70 @@
         font-size: .73rem;
         line-height: 1.6;
       }
+      .booking-summary {
+        position: sticky;
+        top: 24px;
+        margin-top: 14px;
+        padding: 23px 20px;
+        border: 1px solid rgba(167,119,105,.2);
+        border-radius: 22px;
+        background: linear-gradient(155deg, #f9f1e9, #f4e8df);
+      }
+      .booking-summary__icon {
+        display: grid;
+        width: 42px;
+        height: 42px;
+        margin-bottom: 20px;
+        place-items: center;
+        border: 1px solid rgba(167,119,105,.25);
+        border-radius: 50%;
+        color: var(--rose);
+        font-size: 1.2rem;
+      }
+      .booking-summary h2 {
+        margin: 0 0 5px;
+        color: #48362f;
+        font-family: "Cormorant Garamond", Georgia, serif;
+        font-size: 1.65rem;
+        font-weight: 600;
+      }
+      .booking-summary > p {
+        margin: 0 0 20px;
+        color: var(--muted);
+        font-size: .76rem;
+        line-height: 1.6;
+      }
+      .summary-line {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 0;
+        border-top: 1px solid rgba(96,78,61,.12);
+        font-size: .74rem;
+      }
+      .summary-line span { color: var(--muted); }
+      .summary-line strong {
+        max-width: 58%;
+        color: #55433a;
+        font-weight: 700;
+        text-align: right;
+      }
+      .summary-price {
+        display: block;
+        margin-top: 18px;
+        color: #55433a;
+        font-family: "Cormorant Garamond", Georgia, serif;
+        font-size: 1.7rem;
+      }
+      .summary-price small {
+        display: block;
+        margin-bottom: 2px;
+        color: var(--muted);
+        font-family: "Manrope", "Segoe UI", sans-serif;
+        font-size: .65rem;
+        font-weight: 700;
+        letter-spacing: .04em;
+      }
       button {
         display: flex;
         align-items: center;
@@ -217,10 +314,15 @@
           border-radius: 23px;
           padding: 24px 19px;
         }
-        .back-link { margin-bottom: 34px; }
+        .brand-lockup { margin-bottom: 26px; }
+        .back-link { margin-bottom: 25px; }
         .sub { margin-bottom: 26px; font-size: .84rem; }
         .form-grid { grid-template-columns: 1fr; gap: 0; }
         .field--wide { grid-column: auto; }
+      }
+      @media (max-width: 760px) {
+        .booking-layout { grid-template-columns: 1fr; gap: 22px; }
+        .booking-summary { position: static; margin-top: 0; }
       }
       @media (prefers-reduced-motion: reduce) {
         *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
@@ -230,58 +332,76 @@
   <body>
     <div class="wrap">
       <div class="card">
-        <a class="back-link" href="../index.html">← Volver a Aura</a>
-        <header class="booking-header">
-          <p class="eyebrow">Tu momento de cuidado</p>
-          <h1>Reservá tu turno</h1>
-          <p class="sub">Elegí tu servicio y encontrá el horario ideal. Nosotras nos ocupamos del resto.</p>
-        </header>
+        <a class="brand-lockup" href="../index.html" aria-label="Aura Nails, volver al inicio">
+          <img src="../assets/img/aura-icon.png" alt="" />
+          <span><strong>AURA</strong><small>NAIL STUDIO</small></span>
+        </a>
+        <div class="booking-layout">
+          <div>
+            <a class="back-link" href="../index.html">← Volver al inicio</a>
+            <header class="booking-header">
+              <p class="eyebrow">Tu momento de cuidado</p>
+              <h1>Reservá tu turno</h1>
+              <p class="sub">Elegí tu servicio y encontrá el horario ideal. Nosotras nos ocupamos del resto.</p>
+            </header>
 
-        <form id="formTurno">
-          <div class="form-grid">
-            <div class="field">
-              <label for="nombre">Tu nombre</label>
-              <input id="nombre" name="nombre" type="text" autocomplete="name" placeholder="¿Cómo te llamás?" required />
-            </div>
+            <form id="formTurno">
+              <div class="form-grid">
+                <div class="field">
+                  <label for="nombre">Tu nombre</label>
+                  <input id="nombre" name="nombre" type="text" autocomplete="name" placeholder="¿Cómo te llamás?" required />
+                </div>
 
-            <div class="field">
-              <label for="telefono">Teléfono de contacto</label>
-              <input id="telefono" name="telefono" type="tel" autocomplete="tel" placeholder="Tu número de WhatsApp" required />
-            </div>
+                <div class="field">
+                  <label for="telefono">Teléfono de contacto</label>
+                  <input id="telefono" name="telefono" type="tel" autocomplete="tel" placeholder="Tu número de WhatsApp" required />
+                </div>
 
-            <div class="field">
-              <label for="tipo">Servicio</label>
-              <select id="tipo" name="tipo" required>
-                <option value="">Cargando servicios…</option>
-              </select>
-            </div>
+                <div class="field">
+                  <label for="tipo">Servicio</label>
+                  <select id="tipo" name="tipo" required>
+                    <option value="">Cargando servicios…</option>
+                  </select>
+                </div>
 
-            <div class="field">
-              <label for="fecha">Fecha que preferís</label>
-              <input id="fecha" name="fecha" type="date" required />
-            </div>
+                <div class="field">
+                  <label for="fecha">Fecha que preferís</label>
+                  <input id="fecha" name="fecha" type="date" required />
+                </div>
 
-            <div class="field field--wide">
-              <label for="hora">Horario disponible</label>
-              <select id="hora" name="hora" required>
-                <option value="">Elegí primero una fecha</option>
-              </select>
-            </div>
+                <div class="field field--wide">
+                  <label for="hora">Horario disponible</label>
+                  <select id="hora" name="hora" required>
+                    <option value="">Elegí primero una fecha</option>
+                  </select>
+                </div>
 
-            <div class="field field--wide">
-              <label for="notas">¿Algo que quieras contarnos? <span>(opcional)</span></label>
-              <textarea id="notas" name="notas" rows="3" placeholder="Dejanos una nota sobre tu idea o diseño"></textarea>
-            </div>
+                <div class="field field--wide">
+                  <label for="notas">¿Algo que quieras contarnos? <span>(opcional)</span></label>
+                  <textarea id="notas" name="notas" rows="3" placeholder="Dejanos una nota sobre tu idea o diseño"></textarea>
+                </div>
+              </div>
+              <p class="form-note">Los horarios se actualizan según la disponibilidad para la fecha elegida.</p>
+
+              <button type="submit">Solicitar mi turno <span aria-hidden="true">↗</span></button>
+              <button id="installButton" class="install-btn" type="button">Instalar app</button>
+            </form>
+
+            <div id="error" class="error" role="alert" aria-live="polite"></div>
+            <div id="success" class="success" role="status">¡Turno enviado correctamente! Te confirmaremos por teléfono.</div>
+            <p class="booking-footnote">Tu solicitud será confirmada por el equipo de Aura Nails.</p>
           </div>
-          <p class="form-note">Los horarios se actualizan según la disponibilidad para la fecha elegida.</p>
 
-          <button type="submit">Solicitar mi turno <span aria-hidden="true">↗</span></button>
-          <button id="installButton" class="install-btn" type="button">Instalar app</button>
-        </form>
-
-        <div id="error" class="error" role="alert" aria-live="polite"></div>
-        <div id="success" class="success" role="status">¡Turno enviado correctamente! Te confirmaremos por teléfono.</div>
-        <p class="booking-footnote">Tu solicitud será confirmada por el equipo de Aura Nails.</p>
+          <aside class="booking-summary" aria-live="polite" aria-label="Resumen de tu reserva">
+            <span class="booking-summary__icon" aria-hidden="true">✳</span>
+            <h2>Tu momento Aura</h2>
+            <p>Un espacio pensado para que disfrutes cada detalle.</p>
+            <div class="summary-line"><span>Servicio</span><strong id="summaryService">A elección</strong></div>
+            <div class="summary-line"><span>Fecha</span><strong id="summaryDate">A elección</strong></div>
+            <div class="summary-line"><span>Horario</span><strong id="summaryTime">A elección</strong></div>
+            <strong class="summary-price"><small>Precio del servicio</small><span id="summaryPrice">A confirmar</span></strong>
+          </aside>
+        </div>
       </div>
     </div>
 
@@ -350,8 +470,27 @@
           const option = document.createElement('option');
           option.value = tipo.id;
           option.textContent = `${tipo.nombre} - $${Number(tipo.precio).toFixed(2)}`;
+          option.dataset.price = String(Number(tipo.precio) || 0);
+          option.dataset.name = tipo.nombre;
           tipoSelect.appendChild(option);
         });
+      }
+
+      function actualizarResumen() {
+        const tipoSeleccionado = tipoSelect.selectedOptions[0];
+        const fecha = fechaInput.value;
+        const hora = horaSelect.value;
+        const precio = Number(tipoSeleccionado?.dataset.price);
+
+        document.getElementById('summaryService').textContent =
+          tipoSeleccionado?.value ? tipoSeleccionado.dataset.name : 'A elección';
+        document.getElementById('summaryDate').textContent = fecha
+          ? new Date(`${fecha}T12:00:00`).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' })
+          : 'A elección';
+        document.getElementById('summaryTime').textContent = hora ? `${hora} hs` : 'A elección';
+        document.getElementById('summaryPrice').textContent = tipoSeleccionado?.value && Number.isFinite(precio)
+          ? new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 2 }).format(precio)
+          : 'A confirmar';
       }
 
       async function cargarHorariosDisponibles() {
@@ -393,9 +532,13 @@
       }
 
       fechaInput.addEventListener('change', cargarHorariosDisponibles);
+      tipoSelect.addEventListener('change', actualizarResumen);
+      fechaInput.addEventListener('change', actualizarResumen);
+      horaSelect.addEventListener('change', actualizarResumen);
       setFechaMinima();
       cargarTipos();
       cargarHorariosDisponibles();
+      actualizarResumen();
 
       form.addEventListener('submit', async (event) => {
         event.preventDefault();
