@@ -7,7 +7,7 @@
 - `public/aura.html`: información sobre Aura y sus redes.
 - `public/disenios.html`: galería de diseños de uñas.
 - `index.html`: portada con accesos a reservas, información y diseños.
-- `admin/*.html`: panel administrativo.
+- `admin/*.html`: panel administrativo, con gestión de servicios en `admin/servicios.html`.
 - `supabase/schema.sql`: esquema de base de datos para Supabase.
 - `assets/js/supabase-config.js`: configuración base para Supabase.
 
@@ -27,9 +27,22 @@ window.AURA_SUPABASE = {
 
 5. Ejecutar el SQL de `supabase/schema.sql` en el SQL editor de Supabase.
 
-## Login admin
+Si el proyecto ya tenía las tablas y políticas creadas, volvé a ejecutar `supabase/schema.sql` para actualizar las políticas, agregar a los turnos los campos de forma de pago y precio pagado, crear la tabla privada de fichas de clientes y habilitar el borrado administrativo de turnos. La página Clientes solo mostrará las fichas agregadas manualmente por el administrador; reservar un turno no crea una ficha ni borrar una ficha elimina turnos. Desde Historial se pueden borrar turnos seleccionados (con confirmación); la economía mensual calcula ingresos solo con el precio pagado guardado al finalizar cada atención.
 
-Crear una cuenta de administrador en Supabase Auth y usar ese correo para entrar al panel.
+## Login admin por correo electrónico
+
+1. En Supabase, abrir **Authentication > Users** y crear/invitar al usuario administrador con su correo y contraseña.
+2. Si el correo del usuario no es `admin@aura-nails.local`, asignarle el rol desde **SQL Editor**, reemplazando el correo por el usado para iniciar sesión:
+
+```sql
+update auth.users
+set raw_app_meta_data = coalesce(raw_app_meta_data, '{}'::jsonb) || '{"role":"admin"}'::jsonb
+where lower(email) = lower('TU_CORREO');
+```
+
+3. Cerrar sesión y volver a ingresar desde `admin/login.html` con ese correo y contraseña. Si se acaba de asignar el rol, volver a iniciar sesión para que la nueva sesión lo incluya.
+
+No asignar el rol desde `user_metadata` ni desde el navegador; usá `app_metadata` como en la consulta anterior.
 
 Ejemplo recomendado:
 

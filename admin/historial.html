@@ -5,13 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Historial - Admin</title>
     <link rel="stylesheet" href="../assets/css/styles.css" />
-    <style>
-      .panel { background: rgba(255,255,255,0.82); border-radius: 24px; padding: 22px; box-shadow: 0 10px 28px rgba(120,88,75,0.08); }
-      .item { border: 1px solid #f0dfe7; border-radius: 12px; padding: 16px; margin-top: 10px; }
-      @media (max-width: 480px) {
-        .panel { padding: 16px 14px; }
-      }
-    </style>
+    <link rel="stylesheet" href="../assets/css/admin-pages.css" />
   </head>
   <body class="admin-page">
     <button class="btn-opciones" type="button" aria-expanded="false" aria-label="Abrir menú">
@@ -28,17 +22,86 @@
         <a href="index.html">Inicio</a>
         <a href="turnos.html">Turnos</a>
         <a href="clientes.html">Clientes</a>
-        <a href="tipos.html">Tipos</a>
-        <a href="historial.html">Historial</a>
+        <a href="servicios.html">Servicios</a>
+        <a href="historial.html" aria-current="page">Historial</a>
         <a href="login.html" id="logoutBtn">Cerrar sesión</a>
       </div>
     </nav>
 
     <div class="app-shell">
       <main class="content">
-        <div class="panel">
-          <h1>Historial</h1>
-          <div id="listaHistorial"></div>
+        <div class="admin-management">
+          <header class="management-heading">
+            <div>
+              <p class="management-heading__eyebrow">Cada detalle cuenta</p>
+              <h1>Historial de turnos</h1>
+              <p class="management-heading__copy">Consultá las atenciones anteriores y encontrá cada visita por cliente o servicio.</p>
+            </div>
+            <a class="management-button" href="turnos.html">Volver a la agenda <span aria-hidden="true">↗</span></a>
+          </header>
+          <section class="management-stats" aria-label="Resumen del historial">
+            <article class="management-stat"><span>Atenciones finalizadas</span><strong id="historyCount">—</strong></article>
+            <article class="management-stat"><span>Turnos confirmados</span><strong id="confirmedCount">—</strong></article>
+            <article class="management-stat"><span>Cancelaciones</span><strong id="cancelledCount">—</strong></article>
+          </section>
+          <section class="economy-panel" aria-labelledby="economyTitle">
+            <div class="economy-panel__heading">
+              <div>
+                <p class="management-heading__eyebrow">Ingresos y actividad</p>
+                <h2 id="economyTitle">Economía del negocio</h2>
+                <p class="economy-panel__copy">Resumen de atenciones realizadas según el mes elegido.</p>
+              </div>
+              <label class="economy-month-label" for="economyMonth">Mes
+                <input class="management-select" id="economyMonth" type="month" />
+              </label>
+            </div>
+            <div class="economy-stats" aria-live="polite">
+              <article class="economy-stat economy-stat--income">
+                <span>Ingresos registrados</span>
+                <strong id="monthlyRevenue">—</strong>
+                <small id="revenueComparison">Comparación mensual</small>
+              </article>
+              <article class="economy-stat">
+                <span>Atenciones realizadas</span>
+                <strong id="monthlyAppointments">—</strong>
+                <small id="monthlyUnpriced">Incluye pagos registrados</small>
+              </article>
+              <article class="economy-stat">
+                <span>Clientes atendidas</span>
+                <strong id="monthlyClients">—</strong>
+                <small>Personas únicas en el mes</small>
+              </article>
+              <article class="economy-stat">
+                <span>Ticket promedio</span>
+                <strong id="monthlyAverage">—</strong>
+                <small>Por atención con pago registrado</small>
+              </article>
+            </div>
+            <div class="economy-chart" id="economyChart" role="img" aria-label="Ingresos por semana del mes">
+              <p class="economy-chart__empty">Elegí un mes para ver su actividad.</p>
+            </div>
+            <p class="economy-panel__note" id="economyNote"></p>
+          </section>
+          <section class="management-panel" aria-label="Historial de turnos">
+            <div class="management-toolbar">
+              <div class="management-toolbar__controls">
+                <input class="management-search" id="historySearch" type="search" placeholder="Buscar por cliente o servicio" aria-label="Buscar en el historial" />
+                <select class="management-select" id="historyStatus" aria-label="Filtrar por estado">
+                  <option value="">Todos los estados</option>
+                  <option value="realizado">Realizados</option>
+                  <option value="confirmado">Confirmados</option>
+                  <option value="cancelado">Cancelados</option>
+                </select>
+                <button class="management-action management-action--delete" id="deleteSelectedHistory" type="button" disabled>Borrar seleccionados</button>
+              </div>
+              <span class="management-count" id="historyResultCount" aria-live="polite"></span>
+            </div>
+            <p class="history-action-message" id="historyActionMessage" aria-live="polite" hidden></p>
+            <p class="history-delete-hint">Podés seleccionar registros del historial para borrarlos. Esta acción es permanente.</p>
+            <div class="management-list" id="listaHistorial" aria-live="polite">
+              <p class="management-notice">Cargando historial…</p>
+            </div>
+          </section>
         </div>
       </main>
     </div>
@@ -86,41 +149,281 @@
 
       verificarAccesoAdmin();
 
-      async function cargarHistorial() {
-        const contenedor = document.getElementById('listaHistorial');
-        const client = window.auraSupabase;
+      const listaHistorial = document.getElementById('listaHistorial');
+      const buscadorHistorial = document.getElementById('historySearch');
+      const filtroEstado = document.getElementById('historyStatus');
+      const selectorBorrarHistorial = document.getElementById('deleteSelectedHistory');
+      const seleccionHistorial = new Set();
+      const estados = { realizado: 'Realizado', confirmado: 'Confirmado', cancelado: 'Cancelado' };
+      const formasPago = { efectivo: 'Efectivo', transferencia: 'Transferencia', cuenta_bancaria: 'Cuenta bancaria' };
+      const formatoMoneda = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' });
+      const selectorMes = document.getElementById('economyMonth');
+      const fechaActual = new Date();
+      selectorMes.value = `${fechaActual.getFullYear()}-${String(fechaActual.getMonth() + 1).padStart(2, '0')}`;
+      let historial = [];
 
+      function actualizarBotonBorrar() {
+        selectorBorrarHistorial.disabled = seleccionHistorial.size === 0;
+        selectorBorrarHistorial.textContent = seleccionHistorial.size
+          ? `Borrar seleccionados (${seleccionHistorial.size})`
+          : 'Borrar seleccionados';
+      }
+
+      function mostrarMensajeAccion(texto, error = false) {
+        const mensaje = document.getElementById('historyActionMessage');
+        mensaje.hidden = !texto;
+        mensaje.textContent = texto;
+        mensaje.classList.toggle('history-action-message--error', error);
+      }
+
+      function claveCliente(turno) {
+        const telefono = (turno.telefono || '').replace(/\D/g, '');
+        if (telefono) return `telefono:${telefono}`;
+        return `nombre:${(turno.nombre || '').trim().toLocaleLowerCase('es')}`;
+      }
+
+      function actualizarEconomia() {
+        const mes = selectorMes.value;
+        const realizados = historial.filter((turno) =>
+          turno.estado === 'realizado' && typeof turno.fecha === 'string' && turno.fecha.startsWith(`${mes}-`)
+        );
+        const conPago = realizados.filter((turno) =>
+          turno.precio_pagado !== null &&
+          turno.precio_pagado !== undefined &&
+          Number.isFinite(Number(turno.precio_pagado)) &&
+          Number(turno.precio_pagado) >= 0
+        );
+        const ingresos = conPago.reduce((total, turno) => total + Number(turno.precio_pagado), 0);
+        const clientesUnicos = new Set(realizados.map(claveCliente));
+        const promedio = conPago.length ? ingresos / conPago.length : 0;
+        document.getElementById('monthlyRevenue').textContent = formatoMoneda.format(ingresos);
+        document.getElementById('monthlyAppointments').textContent = String(realizados.length);
+        document.getElementById('monthlyClients').textContent = String(clientesUnicos.size);
+        document.getElementById('monthlyAverage').textContent = formatoMoneda.format(promedio);
+        document.getElementById('monthlyUnpriced').textContent = realizados.length === conPago.length
+          ? 'Todos con pago registrado'
+          : `${realizados.length - conPago.length} sin precio pagado registrado`;
+
+        const mesAnteriorDate = new Date(`${mes}-01T00:00:00`);
+        mesAnteriorDate.setMonth(mesAnteriorDate.getMonth() - 1);
+        const mesAnterior = `${mesAnteriorDate.getFullYear()}-${String(mesAnteriorDate.getMonth() + 1).padStart(2, '0')}`;
+        const ingresosMesAnterior = historial
+          .filter((turno) => turno.estado === 'realizado' && turno.fecha?.startsWith(`${mesAnterior}-`))
+          .reduce((total, turno) => {
+            const precio = Number(turno.precio_pagado);
+            return turno.precio_pagado !== null && turno.precio_pagado !== undefined && Number.isFinite(precio) && precio >= 0
+              ? total + precio
+              : total;
+          }, 0);
+        const diferencia = ingresos - ingresosMesAnterior;
+        const comparacion = document.getElementById('revenueComparison');
+        comparacion.textContent = `vs. mes anterior: ${diferencia > 0 ? '+' : ''}${formatoMoneda.format(diferencia)}`;
+        comparacion.classList.toggle('is-positive', diferencia > 0);
+        comparacion.classList.toggle('is-negative', diferencia < 0);
+
+        const semanas = Array.from({ length: 5 }, (_, indice) => ({
+          label: `Sem. ${indice + 1}`,
+          total: 0,
+          cantidad: 0
+        }));
+        realizados.forEach((turno) => {
+          const dia = Number(turno.fecha.slice(8, 10));
+          const semana = Math.min(Math.floor((dia - 1) / 7), 4);
+          const precio = Number(turno.precio_pagado);
+          if (turno.precio_pagado !== null && turno.precio_pagado !== undefined && Number.isFinite(precio) && precio >= 0) {
+            semanas[semana].total += precio;
+            semanas[semana].cantidad += 1;
+          }
+        });
+        const maximo = Math.max(...semanas.map((semana) => semana.total), 0);
+        const chart = document.getElementById('economyChart');
+        chart.replaceChildren();
+        if (!realizados.length) {
+          const empty = document.createElement('p');
+          empty.className = 'economy-chart__empty';
+          empty.textContent = 'No hay atenciones realizadas registradas en este mes.';
+          chart.appendChild(empty);
+        } else {
+          semanas.forEach((semana) => {
+            const columna = document.createElement('div');
+            columna.className = 'economy-chart__column';
+            const barraArea = document.createElement('div');
+            barraArea.className = 'economy-chart__bar-area';
+            const barra = document.createElement('div');
+            barra.className = 'economy-chart__bar';
+            const porcentaje = maximo > 0 ? semana.total / maximo * 100 : 0;
+            barra.style.height = `${semana.total > 0 ? Math.max(porcentaje, 5) : 0}%`;
+            barra.title = `${semana.label}: ${formatoMoneda.format(semana.total)} (${semana.cantidad} pagos)`;
+            barra.setAttribute('aria-hidden', 'true');
+            barraArea.appendChild(barra);
+            const etiqueta = document.createElement('span');
+            etiqueta.textContent = semana.label;
+            const valor = document.createElement('small');
+            valor.textContent = formatoMoneda.format(semana.total);
+            columna.append(barraArea, valor, etiqueta);
+            chart.appendChild(columna);
+          });
+        }
+        document.getElementById('economyNote').textContent =
+          'Los ingresos suman únicamente el precio pagado guardado al marcar un turno como realizado. Los registros antiguos sin importe se cuentan como atención, pero no como ingreso.';
+      }
+
+      function mostrarAviso(texto, error = false) {
+        const aviso = document.createElement('p');
+        aviso.className = `management-notice${error ? ' management-notice--error' : ''}`;
+        aviso.textContent = texto;
+        listaHistorial.replaceChildren(aviso);
+      }
+
+      function fechaLegible(fecha) {
+        if (!fecha) return 'Sin fecha registrada';
+        const date = new Date(`${fecha}T00:00:00`);
+        return Number.isNaN(date.getTime())
+          ? fecha
+          : new Intl.DateTimeFormat('es-AR', { day: 'numeric', month: 'long', year: 'numeric' }).format(date);
+      }
+
+      function renderHistorial() {
+        const busqueda = buscadorHistorial.value.trim().toLocaleLowerCase('es');
+        const estado = filtroEstado.value;
+        const filtrados = historial.filter((item) => {
+          const texto = `${item.nombre || ''} ${item.tipos?.nombre || ''}`.toLocaleLowerCase('es');
+          return texto.includes(busqueda) && (!estado || item.estado === estado);
+        });
+        document.getElementById('historyResultCount').textContent =
+          `${filtrados.length} ${filtrados.length === 1 ? 'turno' : 'turnos'}`;
+        actualizarBotonBorrar();
+        listaHistorial.replaceChildren();
+
+        if (!filtrados.length) {
+          mostrarAviso(historial.length ? 'No hay turnos que coincidan con esos filtros.' : 'Todavía no hay visitas en el historial.');
+          return;
+        }
+
+        filtrados.forEach((turno) => {
+          const card = document.createElement('article');
+          card.className = 'management-card';
+          card.dataset.historyId = String(turno.id);
+          const top = document.createElement('div');
+          top.className = 'management-card__top';
+          const identity = document.createElement('div');
+          identity.className = 'history-card__identity';
+          const selectionLabel = document.createElement('label');
+          selectionLabel.className = 'history-card__selection';
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.checked = seleccionHistorial.has(turno.id);
+          checkbox.setAttribute('aria-label', `Seleccionar turno de ${turno.nombre || 'cliente'} para borrar`);
+          checkbox.addEventListener('change', () => {
+            if (checkbox.checked) seleccionHistorial.add(turno.id);
+            else seleccionHistorial.delete(turno.id);
+            actualizarBotonBorrar();
+          });
+          selectionLabel.appendChild(checkbox);
+          const name = document.createElement('h2');
+          name.className = 'management-card__title';
+          name.textContent = turno.nombre || 'Sin nombre';
+          identity.append(selectionLabel, name);
+          const badge = document.createElement('span');
+          badge.className = `management-badge ${turno.estado || ''}`;
+          badge.textContent = estados[turno.estado] || turno.estado || 'Sin estado';
+          top.append(identity, badge);
+          const meta = document.createElement('div');
+          meta.className = 'management-card__meta';
+          const precio = turno.precio_pagado ?? turno.tipos?.precio;
+          const detalles = [
+            `Servicio: ${turno.tipos?.nombre || 'Sin tipo'}`,
+            `Precio del servicio: ${precio !== null && precio !== undefined && Number.isFinite(Number(precio)) ? formatoMoneda.format(Number(precio)) : 'Sin precio registrado'}`,
+            `Fecha: ${fechaLegible(turno.fecha)}`,
+            `Horario: ${turno.hora || 'Sin horario'}`,
+            `Teléfono: ${turno.telefono || 'Sin teléfono'}`
+          ];
+          if (turno.estado === 'realizado') {
+            detalles.push(`Forma de pago: ${formasPago[turno.forma_pago] || 'No registrada'}`);
+          }
+          if (turno.notas) detalles.push(`Notas: ${turno.notas}`);
+          detalles.forEach((detail) => {
+            const item = document.createElement('span');
+            item.textContent = detail;
+            meta.appendChild(item);
+          });
+          card.append(top, meta);
+          listaHistorial.appendChild(card);
+        });
+      }
+
+      async function cargarHistorial() {
+        const client = window.auraSupabase;
         if (!client) {
-          contenedor.innerHTML = '<p>Falta configurar Supabase.</p>';
+          mostrarAviso('Falta configurar Supabase para consultar el historial.', true);
           return;
         }
 
         const { data, error } = await client
           .from('turnos')
-          .select('id, nombre, fecha, estado, tipo_id, tipos (id, nombre)')
+          .select('id, nombre, telefono, fecha, hora, notas, estado, tipo_id, forma_pago, precio_pagado, tipos (id, nombre, precio)')
           .neq('estado', 'pendiente')
-          .order('fecha', { ascending: false });
+          .order('fecha', { ascending: false })
+          .order('hora', { ascending: false });
 
         if (error) {
-          contenedor.innerHTML = '<p>No se pudo cargar el historial.</p>';
+          console.error('No se pudo cargar el historial:', error);
+          mostrarAviso('No se pudo cargar el historial. Volvé a intentarlo en unos minutos.', true);
           return;
         }
 
-        if (!data || !data.length) {
-          contenedor.innerHTML = '<p>Aún no hay historial disponible.</p>';
-          return;
-        }
-
-        contenedor.innerHTML = data.map((item) => `
-          <div class="item">
-            <strong>${item.nombre}</strong><br>
-            Tipo: ${item.tipos?.nombre || 'Sin tipo'}<br>
-            Fecha: ${item.fecha}<br>
-            Estado: ${item.estado}
-          </div>
-        `).join('');
+        historial = data || [];
+        const idsActuales = new Set(historial.map((turno) => turno.id));
+        seleccionHistorial.forEach((id) => {
+          if (!idsActuales.has(id)) seleccionHistorial.delete(id);
+        });
+        document.getElementById('historyCount').textContent = String(historial.filter((item) => item.estado === 'realizado').length);
+        document.getElementById('confirmedCount').textContent = String(historial.filter((item) => item.estado === 'confirmado').length);
+        document.getElementById('cancelledCount').textContent = String(historial.filter((item) => item.estado === 'cancelado').length);
+        actualizarEconomia();
+        renderHistorial();
       }
 
+      async function borrarHistorialSeleccionado() {
+        const ids = [...seleccionHistorial];
+        if (!ids.length) return;
+        const confirmacion = window.confirm(
+          `¿Borrar definitivamente ${ids.length === 1 ? 'este turno del historial' : `estos ${ids.length} turnos del historial`}? Esta acción no se puede deshacer.`
+        );
+        if (!confirmacion) return;
+
+        const client = window.auraSupabase;
+        if (!client) {
+          mostrarMensajeAccion('No hay conexión con Supabase. Revisá la configuración.', true);
+          return;
+        }
+
+        selectorBorrarHistorial.disabled = true;
+        mostrarMensajeAccion('');
+        try {
+          const { data, error } = await client
+            .from('turnos')
+            .delete()
+            .in('id', ids)
+            .select('id');
+          if (error) throw error;
+          if (!data || data.length !== ids.length) {
+            throw new Error('No se pudieron borrar todos los turnos seleccionados. Verificá tu sesión de administrador e intentá nuevamente.');
+          }
+          seleccionHistorial.clear();
+          await cargarHistorial();
+          mostrarMensajeAccion(`${data.length} ${data.length === 1 ? 'turno borrado' : 'turnos borrados'} del historial.`);
+        } catch (error) {
+          console.error('No se pudieron borrar los turnos del historial:', error);
+          mostrarMensajeAccion(error.message || 'No se pudieron borrar los turnos seleccionados. Intentá nuevamente.', true);
+          selectorBorrarHistorial.disabled = false;
+        }
+      }
+
+      buscadorHistorial.addEventListener('input', renderHistorial);
+      filtroEstado.addEventListener('change', renderHistorial);
+      selectorMes.addEventListener('change', actualizarEconomia);
+      selectorBorrarHistorial.addEventListener('click', borrarHistorialSeleccionado);
       cargarHistorial();
     </script>
   </body>

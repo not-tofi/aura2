@@ -392,6 +392,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .menu-nav a.active,
+.menu-nav a[aria-current="page"],
 .menu-nav a:hover {
   background: linear-gradient(135deg, #c58d6b, #9d6a51);
   color: white;

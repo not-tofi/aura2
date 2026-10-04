@@ -74,6 +74,8 @@
         color: #8a2e54;
         min-height: 20px;
         font-weight: 600;
+        font-size: .88rem;
+        line-height: 1.5;
       }
     </style>
   </head>
@@ -92,8 +94,8 @@
         <button type="submit">Ingresar</button>
       </form>
 
-      <div id="mensaje"></div>
-      <div class="hint">Usá la cuenta administrativa creada en Supabase Auth.</div>
+      <div id="mensaje" role="alert" aria-live="polite"></div>
+      <div class="hint">Ingresá con el correo y la contraseña de administrador creados en Supabase Auth.</div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -137,9 +139,8 @@
 
         const user = data?.user;
         const isAdmin = !!user && (
-          user.app_metadata?.role === 'admin' ||
-          user.email?.toLowerCase() === ADMIN_EMAIL ||
-          user.email?.toLowerCase().endsWith('@aura-nails.local')
+          String(user.app_metadata?.role || '').toLowerCase() === 'admin' ||
+          user.email?.toLowerCase() === ADMIN_EMAIL
         );
 
         if (!isAdmin) {

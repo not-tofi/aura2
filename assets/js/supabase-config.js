@@ -29,13 +29,12 @@ window.auraSupabase = window.supabase.client;
 window.AURA_SUPABASE.isAdminUser = function (user) {
   if (!user) return false;
 
-  const role = String(user.app_metadata?.role || user.role || '').toLowerCase();
+  const role = String(user.app_metadata?.role || '').toLowerCase();
   const email = String(user.email || '').toLowerCase();
   const adminEmail = String(window.AURA_SUPABASE.adminEmail || '').toLowerCase();
 
   return role === String(window.AURA_SUPABASE.requiredRole || 'admin').toLowerCase() ||
-    email === adminEmail ||
-    email.endsWith('@aura-nails.local');
+    email === adminEmail;
 };
 
 window.AURA_SUPABASE.ensureAdminAccess = async function () {

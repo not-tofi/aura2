@@ -5,21 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Turnos - Admin</title>
     <link rel="stylesheet" href="../assets/css/styles.css" />
-    <style>
-      .panel { background: rgba(255,255,255,0.82); border-radius: 24px; padding: 22px; box-shadow: 0 10px 28px rgba(120,88,75,0.08); }
-      .turno { border: 1px solid #f1d7e3; padding: 16px; border-radius: 12px; margin-top: 12px; }
-      .estado { display: inline-block; padding: 6px 10px; border-radius: 999px; font-size: 0.8rem; font-weight: 700; margin-bottom: 8px; }
-      .pendiente { background: #ffe8bd; color: #8b5d00; }
-      .confirmado { background: #dff7e8; color: #1a6b44; }
-      .cancelado { background: #f7d6dc; color: #8a1f3d; }
-      .botones { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
-      .botones button { border: none; border-radius: 10px; padding: 8px 12px; cursor: pointer; background: #d97ca2; color: white; min-height: 42px; }
-      @media (max-width: 480px) {
-        .panel { padding: 16px 14px; }
-        .turno { padding: 14px 12px; }
-        .botones { display: grid; grid-template-columns: 1fr; }
-      }
-    </style>
+    <link rel="stylesheet" href="../assets/css/admin-pages.css" />
   </head>
   <body class="admin-page">
     <button class="btn-opciones" type="button" aria-expanded="false" aria-label="Abrir menú">
@@ -34,9 +20,9 @@
       </div>
       <div class="menu-nav">
         <a href="index.html">Inicio</a>
-        <a href="turnos.html">Turnos</a>
+        <a href="turnos.html" aria-current="page">Turnos</a>
         <a href="clientes.html">Clientes</a>
-        <a href="tipos.html">Tipos</a>
+        <a href="servicios.html">Servicios</a>
         <a href="historial.html">Historial</a>
         <a href="login.html" id="logoutBtn">Cerrar sesión</a>
       </div>
@@ -44,9 +30,41 @@
 
     <div class="app-shell">
       <main class="content">
-        <div class="panel">
-          <h1>Turnos</h1>
-          <div id="listaTurnos"></div>
+        <div class="admin-management">
+          <header class="management-heading">
+            <div>
+              <p class="management-heading__eyebrow">Tu agenda Aura</p>
+              <h1>Turnos</h1>
+              <p class="management-heading__copy">Revisá cada solicitud y mantené al día la agenda de tu estudio.</p>
+            </div>
+            <a class="management-button" href="historial.html">Ver historial <span aria-hidden="true">↗</span></a>
+          </header>
+          <section class="management-stats" aria-label="Resumen de turnos">
+            <article class="management-stat"><span>Turnos totales</span><strong id="appointmentTotal">—</strong></article>
+            <article class="management-stat"><span>Pendientes</span><strong id="pendingTotal">—</strong></article>
+            <article class="management-stat"><span>Confirmados</span><strong id="confirmedTotal">—</strong></article>
+          </section>
+          <section class="management-panel" aria-label="Administrar turnos">
+            <div class="management-toolbar">
+              <div class="management-toolbar__controls">
+                <input class="management-search" id="appointmentSearch" type="search" placeholder="Buscar por cliente, teléfono o servicio" aria-label="Buscar turnos" />
+                <select class="management-select" id="appointmentStatus" aria-label="Filtrar turnos por estado">
+                  <option value="">Todos los estados</option>
+                  <option value="pendiente">Pendientes</option>
+                  <option value="confirmado">Confirmados</option>
+                  <option value="cancelado">Cancelados</option>
+                </select>
+              </div>
+              <span class="management-count" id="appointmentResultCount" aria-live="polite"></span>
+            </div>
+            <p class="appointment-notice" id="appointmentNotice" role="status" hidden>
+              Turno marcado como realizado y archivado.
+              <a href="historial.html">Ver historial</a>
+            </p>
+            <div class="management-list" id="listaTurnos" aria-live="polite">
+              <p class="management-notice">Cargando agenda…</p>
+            </div>
+          </section>
         </div>
       </main>
     </div>
@@ -57,10 +75,10 @@
       async function verificarAccesoAdmin() {
         if (!window.AURA_SUPABASE) {
           window.location.href = 'login.html';
-          return;
+          return false;
         }
 
-        await window.AURA_SUPABASE.ensureAdminAccess();
+        return window.AURA_SUPABASE.ensureAdminAccess();
       }
 
       document.getElementById('logoutBtn').addEventListener('click', async () => {
@@ -92,57 +110,349 @@
         if (event.key === 'Escape') toggleMenu(false);
       });
 
-      verificarAccesoAdmin();
+      const listaTurnos = document.getElementById('listaTurnos');
+      const buscadorTurnos = document.getElementById('appointmentSearch');
+      const filtroTurnos = document.getElementById('appointmentStatus');
+      const avisoTurnos = document.getElementById('appointmentNotice');
+      const nombreEstado = { pendiente: 'Pendiente', confirmado: 'Confirmado', cancelado: 'Cancelado', realizado: 'Realizado' };
+      const estadosPermitidos = Object.keys(nombreEstado);
+      const turnosEnActualizacion = new Set();
+      const mensajesPorTurno = new Map();
+      const turnosConPagoAbierto = new Set();
+      const formasPago = [
+        ['efectivo', 'Efectivo'],
+        ['transferencia', 'Transferencia'],
+        ['cuenta_bancaria', 'Cuenta bancaria']
+      ];
+      let turnos = [];
 
-      async function cargarTurnos() {
-        const client = window.auraSupabase;
-        const cont = document.getElementById('listaTurnos');
+      function mostrarAviso(texto, error = false) {
+        const aviso = document.createElement('p');
+        aviso.className = `management-notice${error ? ' management-notice--error' : ''}`;
+        aviso.textContent = texto;
+        listaTurnos.replaceChildren(aviso);
+      }
 
-        if (!client) {
-          cont.innerHTML = '<p>Configura Supabase para ver los turnos.</p>';
+      function fechaLegible(fecha) {
+        if (!fecha) return 'Sin fecha';
+        const date = new Date(`${fecha}T00:00:00`);
+        return Number.isNaN(date.getTime())
+          ? fecha
+          : new Intl.DateTimeFormat('es-AR', { day: 'numeric', month: 'long', year: 'numeric' }).format(date);
+      }
+
+      function renderTurnos() {
+        const busqueda = buscadorTurnos.value.trim().toLocaleLowerCase('es');
+        const estado = filtroTurnos.value;
+        const filtrados = turnos.filter((turno) => {
+          const texto = `${turno.nombre || ''} ${turno.telefono || ''} ${turno.tipos?.nombre || ''}`.toLocaleLowerCase('es');
+          return texto.includes(busqueda) && (!estado || turno.estado === estado);
+        });
+        document.getElementById('appointmentResultCount').textContent =
+          `${filtrados.length} ${filtrados.length === 1 ? 'turno' : 'turnos'}`;
+        listaTurnos.replaceChildren();
+
+        if (!filtrados.length) {
+          mostrarAviso(turnos.length ? 'No hay turnos que coincidan con esos filtros.' : 'Todavía no hay turnos en la agenda.');
           return;
         }
 
-        const { data: turnos, error } = await client
+        filtrados.forEach((turno) => {
+          const card = document.createElement('article');
+          card.className = 'management-card';
+          card.dataset.turnoId = String(turno.id);
+          const top = document.createElement('div');
+          top.className = 'management-card__top';
+          const name = document.createElement('h2');
+          name.className = 'management-card__title';
+          name.textContent = turno.nombre || 'Sin nombre';
+          const badge = document.createElement('span');
+          badge.className = `management-badge ${turno.estado || ''}`;
+          badge.textContent = nombreEstado[turno.estado] || turno.estado || 'Sin estado';
+          top.append(name, badge);
+
+          const mensaje = mensajesPorTurno.get(turno.id);
+          if (mensaje) {
+            const feedback = document.createElement('span');
+            feedback.className = `management-feedback${mensaje.kind === 'error' ? ' management-feedback--error' : ''}`;
+            feedback.setAttribute('role', mensaje.kind === 'error' ? 'alert' : 'status');
+            feedback.textContent = mensaje.text;
+            top.appendChild(feedback);
+          } else if (turnosEnActualizacion.has(turno.id)) {
+            const feedback = document.createElement('span');
+            feedback.className = 'management-feedback';
+            feedback.setAttribute('role', 'status');
+            feedback.textContent = 'Guardando cambio…';
+            top.appendChild(feedback);
+          }
+
+          const meta = document.createElement('div');
+          meta.className = 'management-card__meta';
+          [
+            `Teléfono: ${turno.telefono || 'Sin teléfono'}`,
+            `Servicio: ${turno.tipos?.nombre || 'Sin tipo'}`,
+            `Fecha: ${fechaLegible(turno.fecha)}`,
+            `Horario: ${turno.hora || 'Sin horario'}`,
+            `Notas: ${turno.notas || 'Sin notas'}`
+          ].forEach((detail) => {
+            const item = document.createElement('span');
+            item.textContent = detail;
+            meta.appendChild(item);
+          });
+
+          if (turnosConPagoAbierto.has(turno.id)) {
+            const paymentPanel = document.createElement('form');
+            paymentPanel.className = 'payment-panel';
+            const paymentHeading = document.createElement('h3');
+            paymentHeading.textContent = 'Registrar el pago';
+            const paymentDescription = document.createElement('p');
+            paymentDescription.className = 'payment-panel__description';
+            paymentDescription.textContent = 'Elegí cómo pagó el cliente para archivar este turno en el historial.';
+
+            const paymentLabel = document.createElement('label');
+            paymentLabel.className = 'payment-panel__label';
+            paymentLabel.textContent = 'Forma de pago';
+            const paymentSelect = document.createElement('select');
+            paymentSelect.className = 'management-select payment-panel__select';
+            paymentSelect.setAttribute('aria-label', `Forma de pago de ${turno.nombre || 'este cliente'}`);
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = 'Seleccioná una forma de pago';
+            paymentSelect.appendChild(placeholder);
+            formasPago.forEach(([value, label]) => {
+              const option = document.createElement('option');
+              option.value = value;
+              option.textContent = label;
+              paymentSelect.appendChild(option);
+            });
+            paymentSelect.value = pagosPorTurno.get(turno.id) || '';
+            paymentSelect.addEventListener('change', () => {
+              pagosPorTurno.set(turno.id, paymentSelect.value);
+              confirmPayment.disabled = !paymentSelect.value || turnosEnActualizacion.has(turno.id);
+            });
+            paymentLabel.appendChild(paymentSelect);
+
+            const price = Number(turno.tipos?.precio);
+            const priceText = document.createElement('p');
+            priceText.className = 'payment-panel__price';
+            priceText.textContent = Number.isFinite(price)
+              ? `Precio del servicio: ${new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(price)}`
+              : 'Este servicio no tiene un precio válido configurado.';
+
+            const paymentActions = document.createElement('div');
+            paymentActions.className = 'payment-panel__actions';
+            const confirmPayment = document.createElement('button');
+            confirmPayment.className = 'management-action management-action--done';
+            confirmPayment.type = 'submit';
+            confirmPayment.textContent = turnosEnActualizacion.has(turno.id) ? 'Guardando…' : 'Confirmar y archivar';
+            confirmPayment.disabled = !paymentSelect.value || turnosEnActualizacion.has(turno.id) || !Number.isFinite(price);
+            const cancelPayment = document.createElement('button');
+            cancelPayment.className = 'management-action';
+            cancelPayment.type = 'button';
+            cancelPayment.textContent = 'Volver';
+            cancelPayment.disabled = turnosEnActualizacion.has(turno.id);
+            cancelPayment.addEventListener('click', () => {
+              turnosConPagoAbierto.delete(turno.id);
+              pagosPorTurno.delete(turno.id);
+              mensajesPorTurno.delete(turno.id);
+              renderTurnos();
+            });
+            paymentActions.append(confirmPayment, cancelPayment);
+            paymentPanel.append(paymentHeading, paymentDescription, paymentLabel, priceText, paymentActions);
+            paymentPanel.addEventListener('submit', (event) => {
+              event.preventDefault();
+              window.finalizarTurno(turno.id);
+            });
+            card.append(top, meta, paymentPanel);
+          } else {
+            card.append(top, meta);
+          }
+
+          const actions = document.createElement('div');
+          actions.className = 'management-actions';
+          [
+            ['pendiente', 'Pendiente'],
+            ['confirmado', 'Confirmar'],
+            ['cancelado', 'Cancelar'],
+            ['realizado', 'Realizado']
+          ].forEach(([value, label]) => {
+            const button = document.createElement('button');
+            button.className = `management-action${value === 'realizado' ? ' management-action--done' : ''}${turno.estado === value ? ' is-current' : ''}`;
+            button.type = 'button';
+            button.textContent = turnosEnActualizacion.has(turno.id) ? 'Guardando…' : label;
+            button.disabled = turno.estado === value || turnosEnActualizacion.has(turno.id) || turnosConPagoAbierto.has(turno.id);
+            button.addEventListener('click', () => window.cambiarEstado(turno.id, value));
+            actions.appendChild(button);
+          });
+
+          card.appendChild(actions);
+          listaTurnos.appendChild(card);
+        });
+      }
+
+      async function cargarTurnos() {
+        const client = window.auraSupabase;
+        if (!client) {
+          mostrarAviso('Falta configurar Supabase para consultar los turnos.', true);
+          return;
+        }
+
+        const { data, error } = await client
           .from('turnos')
-          .select('*, tipos (id, nombre)')
+          .select('*, tipos (id, nombre, precio)')
+          .neq('estado', 'realizado')
           .order('fecha', { ascending: true })
           .order('hora', { ascending: true });
 
         if (error) {
-          cont.innerHTML = '<p>No se pudieron cargar los turnos.</p>';
+          console.error('No se pudieron cargar los turnos:', error);
+          mostrarAviso('No se pudieron cargar los turnos. Volvé a intentarlo en unos minutos.', true);
           return;
         }
 
-        cont.innerHTML = (turnos || []).map((t) => `
-          <div class="turno">
-            <div class="estado ${t.estado}">${t.estado}</div>
-            <div><strong>${t.nombre}</strong></div>
-            <div>Tel: ${t.telefono}</div>
-            <div>Tipo: ${t.tipos?.nombre || 'Sin tipo'}</div>
-            <div>Fecha: ${t.fecha}</div>
-            <div>Hora: ${t.hora}</div>
-            <div>Notas: ${t.notas || 'Sin notas'}</div>
-            <div class="botones">
-              <button onclick="cambiarEstado(${t.id}, 'pendiente')">Pendiente</button>
-              <button onclick="cambiarEstado(${t.id}, 'confirmado')">Confirmado</button>
-              <button onclick="cambiarEstado(${t.id}, 'cancelado')">Cancelado</button>
-            </div>
-          </div>
-        `).join('');
+        turnos = data || [];
+        actualizarResumenTurnos();
+        renderTurnos();
+      }
+
+      function actualizarResumenTurnos() {
+        document.getElementById('appointmentTotal').textContent = String(turnos.length);
+        document.getElementById('pendingTotal').textContent = String(turnos.filter((turno) => turno.estado === 'pendiente').length);
+        document.getElementById('confirmedTotal').textContent = String(turnos.filter((turno) => turno.estado === 'confirmado').length);
       }
 
       window.cambiarEstado = async function (id, estado) {
-        const client = window.auraSupabase;
-        if (!client) return;
+        if (estado === 'realizado') {
+          mensajesPorTurno.delete(id);
+          pagosPorTurno.delete(id);
+          turnosConPagoAbierto.add(id);
+          renderTurnos();
+          listaTurnos.querySelector(`[data-turno-id="${id}"] .payment-panel select`)?.focus();
+          return;
+        }
 
-        const { error } = await client.from('turnos').update({ estado }).eq('id', id);
-        if (!error) {
-          await cargarTurnos();
+        const client = window.auraSupabase;
+        if (!client) {
+          mensajesPorTurno.set(id, { kind: 'error', text: 'No hay conexión con Supabase. Revisá la configuración.' });
+          renderTurnos();
+          return;
+        }
+
+        if (!estadosPermitidos.includes(estado)) {
+          mensajesPorTurno.set(id, { kind: 'error', text: 'El estado seleccionado no es válido.' });
+          renderTurnos();
+          return;
+        }
+
+        if (turnosEnActualizacion.has(id)) return;
+
+        mensajesPorTurno.delete(id);
+        turnosEnActualizacion.add(id);
+        renderTurnos();
+
+        try {
+          const { data, error } = await client
+            .from('turnos')
+            .update({ estado })
+            .eq('id', id)
+            .select('id, estado')
+            .maybeSingle();
+
+          if (error) throw error;
+          if (!data) throw new Error('No se encontró el turno actualizado. Verificá que tu sesión de administrador siga activa.');
+
+          const turno = turnos.find((item) => item.id === id);
+          if (turno) turno.estado = data.estado;
+          mensajesPorTurno.set(id, { kind: 'success', text: `Estado actualizado: ${nombreEstado[estado]}.` });
+          actualizarResumenTurnos();
+          renderTurnos();
+        } catch (error) {
+          console.error('No se pudo actualizar el estado del turno:', error);
+          mensajesPorTurno.set(id, {
+            kind: 'error',
+            text: error.message || 'No se pudo actualizar el turno. Revisá tu sesión e intentá nuevamente.'
+          });
+        } finally {
+          turnosEnActualizacion.delete(id);
+          renderTurnos();
         }
       };
 
-      cargarTurnos();
+      const pagosPorTurno = new Map();
+
+      window.finalizarTurno = async function (id) {
+        const client = window.auraSupabase;
+        const turno = turnos.find((item) => item.id === id);
+        const formaPago = pagosPorTurno.get(id);
+        const precio = turno?.tipos?.precio;
+
+        if (!client || !turno) {
+          mensajesPorTurno.set(id, { kind: 'error', text: 'No se encontró el turno o se perdió la conexión. Recargá la agenda e intentá de nuevo.' });
+          renderTurnos();
+          return;
+        }
+
+        if (!formasPago.some(([value]) => value === formaPago)) {
+          mensajesPorTurno.set(id, { kind: 'error', text: 'Seleccioná cómo pagó el cliente antes de archivar el turno.' });
+          renderTurnos();
+          return;
+        }
+
+        if (precio === null || precio === undefined || !Number.isFinite(Number(precio)) || Number(precio) < 0) {
+          mensajesPorTurno.set(id, { kind: 'error', text: 'Configurá un precio válido para el servicio antes de archivarlo.' });
+          renderTurnos();
+          return;
+        }
+
+        if (turnosEnActualizacion.has(id)) return;
+
+        mensajesPorTurno.delete(id);
+        turnosEnActualizacion.add(id);
+        renderTurnos();
+
+        try {
+          const { data, error } = await client
+            .from('turnos')
+            .update({ estado: 'realizado', forma_pago: formaPago, precio_pagado: Number(precio) })
+            .eq('id', id)
+            .select('id, estado, forma_pago, precio_pagado')
+            .maybeSingle();
+
+          if (error) throw error;
+          if (!data) throw new Error('No se pudo encontrar el turno actualizado. Verificá tu sesión e intentá nuevamente.');
+
+          turnos = turnos.filter((item) => item.id !== id);
+          turnosConPagoAbierto.delete(id);
+          pagosPorTurno.delete(id);
+          mensajesPorTurno.delete(id);
+          avisoTurnos.hidden = false;
+          actualizarResumenTurnos();
+          renderTurnos();
+        } catch (error) {
+          console.error('No se pudo archivar el turno:', error);
+          mensajesPorTurno.set(id, {
+            kind: 'error',
+            text: error.message || 'No se pudo archivar el turno. Revisá tu sesión e intentá nuevamente.'
+          });
+        } finally {
+          turnosEnActualizacion.delete(id);
+          renderTurnos();
+        }
+      };
+
+      buscadorTurnos.addEventListener('input', renderTurnos);
+      filtroTurnos.addEventListener('change', renderTurnos);
+
+      async function iniciarTurnos() {
+        const tieneAcceso = await verificarAccesoAdmin();
+        if (tieneAcceso) {
+          await cargarTurnos();
+        } else {
+          mostrarAviso('Iniciá sesión con una cuenta administradora para gestionar los turnos.', true);
+        }
+      }
+
+      iniciarTurnos();
     </script>
   </body>
 </html>

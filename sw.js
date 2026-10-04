@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aura-nails-v3';
+const CACHE_NAME = 'aura-nails-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -35,6 +35,9 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+
+  const requestUrl = new URL(event.request.url);
+  if (requestUrl.origin !== self.location.origin || event.request.headers.has('authorization')) return;
 
   event.respondWith(
     caches.match(event.request).then((cached) => {

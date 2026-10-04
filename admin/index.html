@@ -164,10 +164,10 @@
         <button class="menu-cerrar" type="button" aria-label="Cerrar menú">×</button>
       </div>
       <div class="menu-nav">
-        <a href="index.html">Inicio</a>
+        <a href="index.html" aria-current="page">Inicio</a>
         <a href="turnos.html">Turnos</a>
         <a href="clientes.html">Clientes</a>
-        <a href="tipos.html">Tipos</a>
+        <a href="servicios.html">Servicios</a>
         <a href="historial.html">Historial</a>
         <a href="login.html" id="logoutBtn">Cerrar sesión</a>
       </div>
@@ -183,7 +183,7 @@
               <p class="welcome-date" id="dashboardDate"></p>
               <div class="welcome-actions">
                 <a href="turnos.html">Abrir agenda <span aria-hidden="true">↗</span></a>
-                <a href="tipos.html">Gestionar servicios</a>
+                <a href="servicios.html">Gestionar servicios</a>
               </div>
             </div>
             <img class="welcome-mark" src="../assets/img/aura-icon.png" alt="" />
@@ -225,7 +225,7 @@
               <div class="action-list">
                 <a class="action-link" href="turnos.html"><span>◷</span><span><strong>Administrar turnos</strong><small>Revisá y actualizá la agenda</small></span></a>
                 <a class="action-link" href="clientes.html"><span>♡</span><span><strong>Ver clientes</strong><small>Consultá sus datos de contacto</small></span></a>
-                <a class="action-link" href="tipos.html"><span>✳</span><span><strong>Editar servicios</strong><small>Actualizá tipos y precios</small></span></a>
+                <a class="action-link" href="servicios.html"><span>✳</span><span><strong>Editar servicios</strong><small>Actualizá servicios y precios</small></span></a>
               </div>
             </aside>
           </div>
@@ -348,7 +348,7 @@
         const hoy = fechaLocalISO();
         const [tiposResult, turnosResult, pendientesResult] = await Promise.all([
           client.from('tipos').select('id', { count: 'exact', head: true }),
-          client.from('turnos').select('id, nombre, telefono, hora, estado, tipos (nombre)').eq('fecha', hoy).order('hora'),
+          client.from('turnos').select('id, nombre, telefono, hora, estado, tipos (nombre)').eq('fecha', hoy).neq('estado', 'realizado').order('hora'),
           client.from('turnos').select('id', { count: 'exact', head: true }).eq('estado', 'pendiente')
         ]);
 

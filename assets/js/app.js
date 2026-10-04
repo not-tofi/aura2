@@ -952,7 +952,7 @@ async function renderHome() {
   resumen.innerHTML = `
     <div class="summary-grid">
       <div class="summary-card">
-        <strong>Tipos</strong>
+        <strong>Servicios</strong>
         <span>${tipos.length}</span>
       </div>
       <div class="summary-card">

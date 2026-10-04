@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Servicios - Admin</title>
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="stylesheet" href="../assets/css/admin-pages.css" />
+  </head>
+  <body class="admin-page">
+    <button class="btn-opciones" type="button" aria-expanded="false" aria-label="Abrir menú">
+      <span class="logoo" aria-hidden="true"></span>
+      <p>menu</p>
+    </button>
+
+    <nav class="menu-lateral" id="menu-lateral" aria-hidden="true">
+      <div class="menu-header">
+        <h3>Aura Nails</h3>
+        <button class="menu-cerrar" type="button" aria-label="Cerrar menú">×</button>
+      </div>
+      <div class="menu-nav">
+        <a href="index.html">Inicio</a>
+        <a href="turnos.html">Turnos</a>
+        <a href="clientes.html">Clientes</a>
+        <a href="servicios.html" aria-current="page">Servicios</a>
+        <a href="historial.html">Historial</a>
+        <a href="login.html" id="logoutBtn">Cerrar sesión</a>
+      </div>
+    </nav>
+
+    <div class="app-shell">
+      <main class="content">
+        <div class="admin-management">
+          <header class="management-heading">
+            <div>
+              <p class="management-heading__eyebrow">La carta de Aura</p>
+              <h1>Servicios y precios</h1>
+              <p class="management-heading__copy">Gestioná los servicios y sus precios para mantener al día tus próximas reservas.</p>
+            </div>
+            <a class="management-button" href="turnos.html">Ver turnos <span aria-hidden="true">↗</span></a>
+          </header>
+          <section class="management-stats" aria-label="Resumen de servicios">
+            <article class="management-stat"><span>Servicios disponibles</span><strong id="typeCount">—</strong></article>
+            <article class="management-stat"><span>Precio más bajo</span><strong id="minPrice">—</strong></article>
+            <article class="management-stat"><span>Precio promedio</span><strong id="averagePrice">—</strong></article>
+          </section>
+          <section class="management-panel" aria-label="Administrar servicios">
+            <h2 class="management-card__title" id="serviceFormTitle">Agregar un servicio</h2>
+            <form class="service-form" id="formTipo">
+              <label for="nombreTipo">Nombre del servicio
+                <input id="nombreTipo" type="text" placeholder="Ej.: Manicura semipermanente" maxlength="80" required />
+              </label>
+              <label for="precioTipo">Precio
+                <input id="precioTipo" type="number" min="0" step="0.01" placeholder="0" required />
+              </label>
+              <button type="submit" id="submitTipo">Agregar servicio <span aria-hidden="true">+</span></button>
+              <button type="button" class="service-form__cancel" id="cancelarEdicionTipo" hidden>Cancelar edición</button>
+              <p class="service-form__message" id="typeMessage" aria-live="polite"></p>
+            </form>
+            <div class="management-toolbar">
+              <div class="management-toolbar__controls">
+                <input class="management-search" id="typeSearch" type="search" placeholder="Buscar un servicio" aria-label="Buscar servicios" />
+              </div>
+              <span class="management-count" id="typeResultCount" aria-live="polite"></span>
+            </div>
+            <div class="management-list" id="listaTipos" aria-live="polite">
+              <p class="management-notice">Cargando servicios…</p>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../assets/js/supabase-config.js"></script>
+    <script>
+      async function verificarAccesoAdmin() {
+        if (!window.AURA_SUPABASE) {
+          window.location.href = 'login.html';
+          return;
+        }
+
+        await window.AURA_SUPABASE.ensureAdminAccess();
+      }
+
+      document.getElementById('logoutBtn').addEventListener('click', async () => {
+        localStorage.removeItem('adminSession');
+        if (window.auraSupabase) {
+          await window.auraSupabase.auth.signOut().catch(() => {});
+        }
+        window.location.href = 'login.html';
+      });
+
+      const menuBtn = document.querySelector('.btn-opciones');
+      const menuLateral = document.getElementById('menu-lateral');
+      const menuCerrar = document.querySelector('.menu-cerrar');
+
+      const toggleMenu = (isOpen) => {
+        if (!menuBtn || !menuLateral) return;
+        menuLateral.classList.toggle('open', isOpen);
+        menuBtn.setAttribute('aria-expanded', String(isOpen));
+        menuLateral.setAttribute('aria-hidden', String(!isOpen));
+      };
+
+      menuBtn?.addEventListener('click', () => {
+        const isOpen = menuLateral.classList.contains('open');
+        toggleMenu(!isOpen);
+      });
+
+      menuCerrar?.addEventListener('click', () => toggleMenu(false));
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') toggleMenu(false);
+      });
+
+      verificarAccesoAdmin();
+
+      const listaTipos = document.getElementById('listaTipos');
+      const buscadorTipos = document.getElementById('typeSearch');
+      const mensajeTipo = document.getElementById('typeMessage');
+      const submitTipo = document.getElementById('submitTipo');
+      const cancelarEdicionTipo = document.getElementById('cancelarEdicionTipo');
+      const formularioTipo = document.getElementById('formTipo');
+      const precioFormato = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 2 });
+      let tipos = [];
+      let tipoEditando = null;
+
+      function mostrarAviso(texto, error = false) {
+        const aviso = document.createElement('p');
+        aviso.className = `management-notice${error ? ' management-notice--error' : ''}`;
+        aviso.textContent = texto;
+        listaTipos.replaceChildren(aviso);
+      }
+
+      function renderTipos() {
+        const busqueda = buscadorTipos.value.trim().toLocaleLowerCase('es');
+        const filtrados = tipos.filter((tipo) => tipo.nombre.toLocaleLowerCase('es').includes(busqueda));
+        document.getElementById('typeResultCount').textContent =
+          `${filtrados.length} ${filtrados.length === 1 ? 'servicio' : 'servicios'}`;
+        listaTipos.replaceChildren();
+
+        if (!filtrados.length) {
+          mostrarAviso(tipos.length ? 'No encontramos servicios con esa búsqueda.' : 'Todavía no hay servicios. Agregá el primero con el formulario.');
+          return;
+        }
+
+        filtrados.forEach((tipo) => {
+          const card = document.createElement('article');
+          card.className = 'management-card';
+          const top = document.createElement('div');
+          top.className = 'management-card__top';
+          const name = document.createElement('h3');
+          name.className = 'management-card__title';
+          name.textContent = tipo.nombre;
+          const price = document.createElement('strong');
+          price.className = 'service-price';
+          price.textContent = precioFormato.format(Number(tipo.precio) || 0);
+          top.append(name, price);
+          const meta = document.createElement('div');
+          meta.className = 'management-card__meta';
+          const caption = document.createElement('span');
+          caption.textContent = 'Disponible para nuevas reservas';
+          meta.appendChild(caption);
+          const editar = document.createElement('button');
+          editar.className = 'management-action';
+          editar.type = 'button';
+          editar.textContent = 'Editar servicio';
+          editar.setAttribute('aria-label', `Editar servicio ${tipo.nombre}`);
+          editar.addEventListener('click', () => editarTipo(tipo));
+          card.append(top, meta);
+          card.appendChild(editar);
+          listaTipos.appendChild(card);
+        });
+      }
+
+      async function cargarTipos() {
+        const client = window.auraSupabase;
+        if (!client) {
+          mostrarAviso('Falta configurar Supabase para consultar los servicios.', true);
+          return;
+        }
+
+        const { data, error } = await client.from('tipos').select('id, nombre, precio').order('nombre');
+        if (error) {
+          console.error('No se pudieron cargar los servicios:', error);
+          mostrarAviso('No se pudieron cargar los servicios. Volvé a intentarlo en unos minutos.', true);
+          return;
+        }
+
+        tipos = (data || []).map((tipo) => ({ ...tipo, nombre: tipo.nombre || '' }));
+        const precios = tipos.map((tipo) => Number(tipo.precio)).filter(Number.isFinite);
+        document.getElementById('typeCount').textContent = String(tipos.length);
+        document.getElementById('minPrice').textContent = precios.length ? precioFormato.format(Math.min(...precios)) : '—';
+        document.getElementById('averagePrice').textContent = precios.length
+          ? precioFormato.format(precios.reduce((sum, price) => sum + price, 0) / precios.length)
+          : '—';
+        renderTipos();
+      }
+
+      buscadorTipos.addEventListener('input', renderTipos);
+
+      function editarTipo(tipo) {
+        tipoEditando = tipo;
+        formularioTipo.classList.add('is-editing');
+        document.getElementById('serviceFormTitle').textContent = `Editar: ${tipo.nombre}`;
+        document.getElementById('nombreTipo').value = tipo.nombre;
+        document.getElementById('precioTipo').value = String(tipo.precio);
+        submitTipo.innerHTML = 'Guardar cambios';
+        cancelarEdicionTipo.hidden = false;
+        mensajeTipo.textContent = '';
+        mensajeTipo.dataset.kind = '';
+        formularioTipo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        document.getElementById('nombreTipo').focus({ preventScroll: true });
+      }
+
+      function cancelarEdicion() {
+        tipoEditando = null;
+        formularioTipo.classList.remove('is-editing');
+        formularioTipo.reset();
+        document.getElementById('serviceFormTitle').textContent = 'Agregar un servicio';
+        submitTipo.innerHTML = 'Agregar servicio <span aria-hidden="true">+</span>';
+        cancelarEdicionTipo.hidden = true;
+        mensajeTipo.textContent = '';
+        mensajeTipo.dataset.kind = '';
+      }
+
+      cancelarEdicionTipo.addEventListener('click', cancelarEdicion);
+
+      formularioTipo.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        mensajeTipo.textContent = '';
+        mensajeTipo.dataset.kind = '';
+        const client = window.auraSupabase;
+        if (!client) {
+          mensajeTipo.textContent = 'No hay conexión con Supabase. Revisá la configuración.';
+          mensajeTipo.dataset.kind = 'error';
+          return;
+        }
+
+        const nombre = document.getElementById('nombreTipo').value.trim();
+        const precio = Number(document.getElementById('precioTipo').value);
+        if (!nombre || !Number.isFinite(precio) || precio < 0) {
+          mensajeTipo.textContent = 'Ingresá un nombre y un precio válido mayor o igual a cero.';
+          mensajeTipo.dataset.kind = 'error';
+          return;
+        }
+
+        submitTipo.disabled = true;
+        submitTipo.textContent = 'Guardando…';
+        cancelarEdicionTipo.disabled = true;
+        try {
+          const query = tipoEditando
+            ? client.from('tipos').update({ nombre, precio }).eq('id', tipoEditando.id)
+            : client.from('tipos').insert({ nombre, precio });
+          const { data, error } = await query.select('id').maybeSingle();
+          if (error) throw error;
+          if (!data) throw new Error('No se pudo guardar el servicio. Verificá que tu sesión de administrador siga activa.');
+
+          const fueEdicion = Boolean(tipoEditando);
+          cancelarEdicion();
+          mensajeTipo.textContent = fueEdicion ? 'Servicio actualizado correctamente.' : 'Servicio agregado correctamente.';
+          mensajeTipo.dataset.kind = 'success';
+          await cargarTipos();
+        } catch (error) {
+          console.error('No se pudo guardar el servicio:', error);
+          mensajeTipo.textContent = error.message || 'No se pudo guardar el servicio. Revisá los datos e intentá de nuevo.';
+          mensajeTipo.dataset.kind = 'error';
+        } finally {
+          submitTipo.disabled = false;
+          cancelarEdicionTipo.disabled = false;
+          if (tipoEditando) submitTipo.textContent = 'Guardar cambios';
+          else submitTipo.innerHTML = 'Agregar servicio <span aria-hidden="true">+</span>';
+        }
+      });
+
+      cargarTipos();
+    </script>
+  </body>
+</html>
