@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aura-nails-v5';
+const CACHE_NAME = 'aura-nails-v6';
 const ASSETS = [
   './',
   './index.html',
@@ -38,6 +38,21 @@ self.addEventListener('fetch', (event) => {
 
   const requestUrl = new URL(event.request.url);
   if (requestUrl.origin !== self.location.origin || event.request.headers.has('authorization')) return;
+
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).then(async (response) => {
+        if (response.ok) {
+          const cache = await caches.open(CACHE_NAME);
+          await cache.put(event.request, response.clone());
+        }
+        return response;
+      }).catch(async () =>
+        (await caches.match(event.request, { ignoreSearch: true })) || Response.error()
+      )
+    );
+    return;
+  }
 
   event.respondWith(
     caches.match(event.request).then((cached) => {
