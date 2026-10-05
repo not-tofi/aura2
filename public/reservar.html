@@ -71,10 +71,9 @@
         z-index: 1;
       }
       .booking-layout {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) 260px;
-        align-items: start;
-        gap: clamp(28px, 5vw, 60px);
+        display: block;
+        max-width: 760px;
+        margin: 0 auto;
       }
       .brand-lockup {
         display: inline-flex;
@@ -307,6 +306,164 @@
         font-size: .72rem;
         text-align: center;
       }
+      .booking-progress {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+        margin: 0 0 28px;
+        padding: 0;
+        list-style: none;
+      }
+      .booking-progress li {
+        display: grid;
+        justify-items: center;
+        gap: 8px;
+        color: #9a8b81;
+        font-size: .65rem;
+        font-weight: 800;
+        text-align: center;
+      }
+      .booking-progress li::before {
+        display: grid;
+        width: 32px;
+        height: 32px;
+        place-items: center;
+        border: 1px solid var(--line);
+        border-radius: 50%;
+        background: rgba(255,255,255,.7);
+        content: attr(data-number);
+        font-size: .72rem;
+      }
+      .booking-progress li[aria-current="step"] { color: var(--rose); }
+      .booking-progress li[aria-current="step"]::before {
+        border-color: var(--rose);
+        background: var(--rose);
+        color: white;
+      }
+      .booking-step { animation: step-enter .28s ease both; }
+      .booking-step[hidden] { display: none; }
+      .step-heading { margin: 0 0 20px; }
+      .step-heading h2 {
+        margin: 0;
+        color: #48362f;
+        font-family: "Cormorant Garamond", Georgia, serif;
+        font-size: clamp(1.8rem, 5vw, 2.4rem);
+        font-weight: 600;
+      }
+      .step-heading p { margin: 7px 0 0; color: var(--muted); font-size: .82rem; line-height: 1.6; }
+      .service-options {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+      .service-option {
+        display: grid;
+        min-width: 0;
+        overflow: hidden;
+        padding: 0;
+        margin: 0;
+        border: 1px solid rgba(130,103,84,.18);
+        border-radius: 18px;
+        background: rgba(255,255,255,.82);
+        box-shadow: 0 8px 22px rgba(84,64,49,.05);
+        color: #463831;
+        text-align: left;
+        cursor: pointer;
+        transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+      }
+      .service-option:hover { transform: translateY(-3px); border-color: rgba(167,119,105,.55); box-shadow: 0 14px 30px rgba(84,64,49,.11); }
+      .service-option__image, .service-option__placeholder {
+        display: grid;
+        width: 100%;
+        aspect-ratio: 16 / 10;
+        place-items: center;
+        background: linear-gradient(145deg, #f1e3d9, #f8f1e9);
+        color: var(--rose);
+        font-size: 2rem;
+        object-fit: cover;
+      }
+      .service-option__body { display: grid; gap: 8px; padding: 15px; }
+      .service-option__top { display: flex; align-items: start; justify-content: space-between; gap: 10px; }
+      .service-option__name { margin: 0; color: #48362f; font-size: .9rem; font-weight: 800; line-height: 1.35; }
+      .service-option__price { color: var(--rose); font-size: .88rem; font-weight: 800; white-space: nowrap; }
+      .service-option__meta { color: var(--muted); font-size: .72rem; }
+      .service-option__action { color: var(--rose); font-size: .72rem; font-weight: 800; }
+      .service-detail {
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        background: rgba(255,255,255,.75);
+      }
+      .service-detail__image, .service-detail__placeholder {
+        display: grid;
+        width: 100%;
+        max-height: 360px;
+        aspect-ratio: 16 / 9;
+        place-items: center;
+        background: linear-gradient(145deg, #f1e3d9, #f8f1e9);
+        color: var(--rose);
+        font-size: 3rem;
+        object-fit: cover;
+      }
+      .service-detail__body { padding: clamp(18px, 4vw, 28px); }
+      .service-detail__top { display: flex; align-items: start; justify-content: space-between; gap: 16px; }
+      .service-detail__top h2 { margin: 0; color: #48362f; font-family: "Cormorant Garamond", Georgia, serif; font-size: clamp(2rem, 6vw, 2.8rem); line-height: 1; }
+      .service-detail__price { color: var(--rose); font-size: 1.05rem; font-weight: 800; white-space: nowrap; }
+      .service-detail__duration { margin: 12px 0 0; color: var(--muted); font-size: .8rem; }
+      .service-detail__description { margin: 25px 0; color: #625149; font-size: .85rem; line-height: 1.8; white-space: pre-line; }
+      .service-location { padding-top: 17px; border-top: 1px solid var(--line); }
+      .service-location h3 { margin: 0 0 6px; color: #48362f; font-size: .8rem; }
+      .service-location p { margin: 0; color: var(--muted); font-size: .78rem; line-height: 1.6; }
+      .date-options { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+      .date-option, .time-option, .step-back {
+        display: grid;
+        min-height: 68px;
+        align-content: center;
+        gap: 3px;
+        margin: 0;
+        padding: 9px 5px;
+        border: 1px solid var(--line);
+        border-radius: 13px;
+        background: rgba(255,255,255,.8);
+        box-shadow: none;
+        color: #625149;
+        cursor: pointer;
+      }
+      .date-option span { font-size: .62rem; text-transform: capitalize; }
+      .date-option strong { font-size: .98rem; }
+      .date-option small { font-size: .62rem; text-transform: capitalize; }
+      .date-option[aria-pressed="true"], .time-option[aria-pressed="true"] {
+        border-color: var(--rose);
+        background: #f7eeea;
+        color: var(--rose);
+        box-shadow: 0 0 0 2px rgba(167,119,105,.12);
+      }
+      .schedule-label { margin: 25px 0 11px; color: #625149; font-size: .8rem; font-weight: 800; }
+      .time-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+      .time-option { min-height: 48px; font-size: .78rem; font-weight: 800; }
+      .step-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 25px; }
+      .step-actions button { width: auto; flex: 1 1 180px; margin: 0; padding: 0 18px; }
+      .step-actions .step-back {
+        border: 1px solid var(--line);
+        background: rgba(255,255,255,.8);
+        box-shadow: none;
+        color: #625149;
+      }
+      .step-actions button:disabled { cursor: not-allowed; opacity: .48; }
+      .booking-review {
+        display: grid;
+        gap: 11px;
+        margin-bottom: 22px;
+        padding: 18px;
+        border: 1px solid rgba(167,119,105,.2);
+        border-radius: 16px;
+        background: #f9f1e9;
+      }
+      .booking-review div { display: flex; justify-content: space-between; gap: 14px; font-size: .78rem; }
+      .booking-review span { color: var(--muted); }
+      .booking-review strong { color: #55433a; text-align: right; }
+      .booking-loading { grid-column: 1 / -1; padding: 20px; color: var(--muted); font-size: .82rem; text-align: center; }
+      @keyframes step-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
       @media (max-width: 480px) {
         body { padding-right: 14px; padding-left: 14px; }
         .wrap { padding: 8px 0; }
@@ -319,13 +476,17 @@
         .sub { margin-bottom: 26px; font-size: .84rem; }
         .form-grid { grid-template-columns: 1fr; gap: 0; }
         .field--wide { grid-column: auto; }
+        .service-options { grid-template-columns: 1fr; }
+        .date-options { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .service-detail__top { flex-direction: column; }
+        .booking-progress { gap: 3px; }
+        .booking-progress li { font-size: .56rem; }
       }
       @media (max-width: 760px) {
-        .booking-layout { grid-template-columns: 1fr; gap: 22px; }
-        .booking-summary { position: static; margin-top: 0; }
+        .booking-layout { max-width: none; }
       }
       @media (prefers-reduced-motion: reduce) {
-        *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+        *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
       }
     </style>
   </head>
@@ -337,70 +498,102 @@
           <span><strong>AURA</strong><small>NAIL STUDIO</small></span>
         </a>
         <div class="booking-layout">
-          <div>
+          <div class="booking-main">
             <a class="back-link" href="../index.html">← Volver al inicio</a>
             <header class="booking-header">
               <p class="eyebrow">Tu momento de cuidado</p>
               <h1>Reservá tu turno</h1>
-              <p class="sub">Elegí tu servicio y encontrá el horario ideal. Nosotras nos ocupamos del resto.</p>
+              <p class="sub">Elegí tu servicio, conocé todos los detalles y encontrá el horario ideal para vos.</p>
             </header>
 
+            <ol class="booking-progress" aria-label="Progreso de reserva">
+              <li data-number="1" data-step-indicator="1" aria-current="step">Servicio</li>
+              <li data-number="2" data-step-indicator="2">Detalles</li>
+              <li data-number="3" data-step-indicator="3">Fecha y hora</li>
+              <li data-number="4" data-step-indicator="4">Tus datos</li>
+            </ol>
+
             <form id="formTurno">
-              <div class="form-grid">
-                <div class="field">
-                  <label for="nombre">Tu nombre</label>
-                  <input id="nombre" name="nombre" type="text" autocomplete="name" placeholder="¿Cómo te llamás?" required />
+              <section class="booking-step" data-step="1" aria-labelledby="servicesTitle">
+                <div class="step-heading">
+                  <h2 id="servicesTitle">Elegí el servicio</h2>
+                  <p>Explorá las opciones y tocá una para conocer qué incluye.</p>
                 </div>
-
-                <div class="field">
-                  <label for="telefono">Teléfono de contacto</label>
-                  <input id="telefono" name="telefono" type="tel" autocomplete="tel" placeholder="Tu número de WhatsApp" required />
+                <div id="serviceOptions" class="service-options" aria-live="polite">
+                  <p class="booking-loading">Cargando servicios…</p>
                 </div>
+              </section>
 
-                <div class="field">
-                  <label for="tipo">Servicio</label>
-                  <select id="tipo" name="tipo" required>
-                    <option value="">Cargando servicios…</option>
-                  </select>
+              <section class="booking-step" data-step="2" aria-labelledby="detailTitle" hidden>
+                <div class="step-heading">
+                  <p class="eyebrow">Aura Nails Studio</p>
+                  <h2 id="detailTitle">Detalles del servicio</h2>
                 </div>
-
-                <div class="field">
-                  <label for="fecha">Fecha que preferís</label>
-                  <input id="fecha" name="fecha" type="date" required />
+                <div id="serviceDetail" class="service-detail"></div>
+                <div class="step-actions">
+                  <button class="step-back" type="button" data-go-step="1">← Volver a servicios</button>
+                  <button type="button" id="chooseService">Agregar a mi reserva <span aria-hidden="true">↗</span></button>
                 </div>
+              </section>
 
-                <div class="field field--wide">
-                  <label for="hora">Horario disponible</label>
-                  <select id="hora" name="hora" required>
-                    <option value="">Elegí primero una fecha</option>
-                  </select>
+              <section class="booking-step" data-step="3" aria-labelledby="scheduleTitle" hidden>
+                <div class="step-heading">
+                  <h2 id="scheduleTitle">Elegí fecha y horario</h2>
+                  <p>Seleccioná una fecha disponible para ver los horarios libres.</p>
                 </div>
-
-                <div class="field field--wide">
-                  <label for="notas">¿Algo que quieras contarnos? <span>(opcional)</span></label>
-                  <textarea id="notas" name="notas" rows="3" placeholder="Dejanos una nota sobre tu idea o diseño"></textarea>
+                <p class="schedule-label">Agenda · Asignación automática</p>
+                <div id="dateOptions" class="date-options" aria-label="Fechas disponibles"></div>
+                <p class="schedule-label">Horario</p>
+                <div id="timeOptions" class="time-options" aria-live="polite">
+                  <p class="booking-loading">Seleccioná una fecha para ver los horarios disponibles.</p>
                 </div>
-              </div>
-              <p class="form-note">Los horarios se actualizan según la disponibilidad para la fecha elegida.</p>
+                <div class="step-actions">
+                  <button class="step-back" type="button" data-go-step="2">← Volver al servicio</button>
+                  <button type="button" id="continueToDetails" disabled>Continuar <span aria-hidden="true">→</span></button>
+                </div>
+              </section>
 
-              <button type="submit">Solicitar mi turno <span aria-hidden="true">↗</span></button>
-              <button id="installButton" class="install-btn" type="button">Instalar app</button>
+              <section class="booking-step" data-step="4" aria-labelledby="contactTitle" hidden>
+                <div class="step-heading">
+                  <h2 id="contactTitle">Confirmá tu reserva</h2>
+                  <p>Dejanos tus datos para que podamos comunicarnos con vos.</p>
+                </div>
+                <div class="booking-review" aria-label="Resumen del turno">
+                  <div><span>Servicio</span><strong id="reviewService"></strong></div>
+                  <div><span>Fecha</span><strong id="reviewDate"></strong></div>
+                  <div><span>Horario</span><strong id="reviewTime"></strong></div>
+                  <div><span>Precio</span><strong id="reviewPrice"></strong></div>
+                </div>
+                <div class="form-grid">
+                  <div class="field field--wide">
+                    <label for="nombre">Nombre y apellido</label>
+                    <input id="nombre" name="nombre" type="text" autocomplete="name" placeholder="¿Cómo te llamás?" required />
+                  </div>
+                  <div class="field field--wide">
+                    <label for="email">Correo electrónico</label>
+                    <input id="email" name="email" type="email" autocomplete="email" placeholder="tu@email.com" required />
+                  </div>
+                  <div class="field field--wide">
+                    <label for="telefono">Teléfono de contacto</label>
+                    <input id="telefono" name="telefono" type="tel" autocomplete="tel" placeholder="+54 9 ..." required />
+                  </div>
+                  <div class="field field--wide">
+                    <label for="notas">Notas <span>(opcional)</span></label>
+                    <textarea id="notas" name="notas" rows="3" placeholder="Dejanos una nota sobre tu idea o diseño"></textarea>
+                  </div>
+                </div>
+                <p class="form-note">La seña y cualquier detalle del servicio se coordinan con Aura Nails Studio.</p>
+                <p id="error" class="error" role="alert" aria-live="polite"></p>
+                <div class="step-actions">
+                  <button class="step-back" type="button" data-go-step="3">← Volver a fecha y hora</button>
+                  <button type="submit" id="submitBooking">Confirmar reserva <span aria-hidden="true">↗</span></button>
+                </div>
+                <button id="installButton" class="install-btn" type="button">Instalar app</button>
+              </section>
             </form>
 
-            <div id="error" class="error" role="alert" aria-live="polite"></div>
-            <div id="success" class="success" role="status">¡Turno enviado correctamente! Te confirmaremos por teléfono.</div>
             <p class="booking-footnote">Tu solicitud será confirmada por el equipo de Aura Nails.</p>
           </div>
-
-          <aside class="booking-summary" aria-live="polite" aria-label="Resumen de tu reserva">
-            <span class="booking-summary__icon" aria-hidden="true">✳</span>
-            <h2>Tu momento Aura</h2>
-            <p>Un espacio pensado para que disfrutes cada detalle.</p>
-            <div class="summary-line"><span>Servicio</span><strong id="summaryService">A elección</strong></div>
-            <div class="summary-line"><span>Fecha</span><strong id="summaryDate">A elección</strong></div>
-            <div class="summary-line"><span>Horario</span><strong id="summaryTime">A elección</strong></div>
-            <strong class="summary-price"><small>Precio del servicio</small><span id="summaryPrice">A confirmar</span></strong>
-          </aside>
         </div>
       </div>
     </div>
@@ -433,117 +626,279 @@
         deferredPrompt = null;
         installButton.classList.remove('visible');
       });
-      const tipoSelect = document.getElementById('tipo');
-      const fechaInput = document.getElementById('fecha');
-      const horaSelect = document.getElementById('hora');
       const form = document.getElementById('formTurno');
       const errorBox = document.getElementById('error');
-      const successBox = document.getElementById('success');
-
+      const serviceOptions = document.getElementById('serviceOptions');
+      const serviceDetail = document.getElementById('serviceDetail');
+      const dateOptions = document.getElementById('dateOptions');
+      const timeOptions = document.getElementById('timeOptions');
+      const continueToDetails = document.getElementById('continueToDetails');
+      const submitBooking = document.getElementById('submitBooking');
       const horarios = ['09:00', '11:00', '13:00', '15:00', '17:00', '19:00'];
+      const precioFormato = new Intl.NumberFormat('es-AR', {
+        style: 'currency',
+        currency: 'ARS',
+        maximumFractionDigits: 2
+      });
+      let servicioElegido = null;
+      let fechaElegida = '';
+      let horarioElegido = '';
 
-      function setFechaMinima() {
-        const today = new Date();
-        const yyyy = today.getFullYear();
-        const mm = String(today.getMonth() + 1).padStart(2, '0');
-        const dd = String(today.getDate()).padStart(2, '0');
-        fechaInput.min = `${yyyy}-${mm}-${dd}`;
-        fechaInput.value = `${yyyy}-${mm}-${dd}`;
+      function mostrarPaso(numero) {
+        document.querySelectorAll('.booking-step').forEach((paso) => {
+          paso.hidden = Number(paso.dataset.step) !== numero;
+        });
+        document.querySelectorAll('[data-step-indicator]').forEach((indicador) => {
+          if (Number(indicador.dataset.stepIndicator) === numero) {
+            indicador.setAttribute('aria-current', 'step');
+          } else {
+            indicador.removeAttribute('aria-current');
+          }
+        });
+        errorBox.textContent = '';
+        document.querySelector('.booking-header').scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
 
       async function cargarTipos() {
         const client = window.auraSupabase;
         if (!client) {
-          tipoSelect.innerHTML = '<option value="">Configura Supabase</option>';
+          serviceOptions.innerHTML = '<p class="booking-loading">No se pudo conectar con el catálogo de servicios. Revisá la configuración de Supabase.</p>';
           return;
         }
 
-        const { data, error } = await client.from('tipos').select('*').order('nombre');
-
-        if (error) {
-          tipoSelect.innerHTML = '<option value="">No se pudieron cargar los tipos</option>';
+        let servicios;
+        try {
+          const { data, error } = await client
+            .from('tipos')
+            .select('id, nombre, precio, descripcion, duracion, imagen_url')
+            .order('nombre');
+          if (error) throw error;
+          servicios = data || [];
+        } catch (error) {
+          console.error('No se pudieron cargar los servicios:', error);
+          const mensaje = ['42703', 'PGRST204'].includes(error.code)
+            ? 'El catálogo necesita actualizarse. El administrador debe volver a ejecutar supabase/schema.sql en Supabase.'
+            : 'No se pudieron cargar los servicios. Volvé a intentarlo más tarde.';
+          serviceOptions.textContent = '';
+          const aviso = document.createElement('p');
+          aviso.className = 'booking-loading';
+          aviso.textContent = mensaje;
+          serviceOptions.appendChild(aviso);
           return;
         }
 
-        tipoSelect.innerHTML = '<option value="">Elegí una opción</option>';
-        data.forEach((tipo) => {
-          const option = document.createElement('option');
-          option.value = tipo.id;
-          option.textContent = `${tipo.nombre} - $${Number(tipo.precio).toFixed(2)}`;
-          option.dataset.price = String(Number(tipo.precio) || 0);
-          option.dataset.name = tipo.nombre;
-          tipoSelect.appendChild(option);
+        serviceOptions.replaceChildren();
+        if (!servicios.length) {
+          serviceOptions.innerHTML = '<p class="booking-loading">Todavía no hay servicios disponibles para reservar.</p>';
+          return;
+        }
+
+        servicios.forEach((servicio) => {
+          const button = document.createElement('button');
+          button.className = 'service-option';
+          button.type = 'button';
+          button.setAttribute('aria-label', `Ver detalles de ${servicio.nombre}`);
+
+          if (servicio.imagen_url) {
+            const image = document.createElement('img');
+            image.className = 'service-option__image';
+            image.src = servicio.imagen_url;
+            image.alt = `Ejemplo de ${servicio.nombre}`;
+            image.loading = 'lazy';
+            button.appendChild(image);
+          } else {
+            const placeholder = document.createElement('span');
+            placeholder.className = 'service-option__placeholder';
+            placeholder.setAttribute('aria-hidden', 'true');
+            placeholder.textContent = '✳';
+            button.appendChild(placeholder);
+          }
+
+          const body = document.createElement('span');
+          body.className = 'service-option__body';
+          const top = document.createElement('span');
+          top.className = 'service-option__top';
+          const name = document.createElement('strong');
+          name.className = 'service-option__name';
+          name.textContent = servicio.nombre;
+          const price = document.createElement('span');
+          price.className = 'service-option__price';
+          price.textContent = precioFormato.format(Number(servicio.precio) || 0);
+          top.append(name, price);
+          body.appendChild(top);
+          if (servicio.duracion) {
+            const duration = document.createElement('span');
+            duration.className = 'service-option__meta';
+            duration.textContent = `Duración aprox. ${servicio.duracion}`;
+            body.appendChild(duration);
+          }
+          const action = document.createElement('span');
+          action.className = 'service-option__action';
+          action.textContent = 'Ver detalles →';
+          body.appendChild(action);
+          button.appendChild(body);
+          button.addEventListener('click', () => elegirServicio(servicio));
+          serviceOptions.appendChild(button);
+        });
+      }
+
+      function elegirServicio(servicio) {
+        servicioElegido = servicio;
+        serviceDetail.innerHTML = '';
+        if (servicio.imagen_url) {
+          const image = document.createElement('img');
+          image.className = 'service-detail__image';
+          image.src = servicio.imagen_url;
+          image.alt = `Ejemplo de ${servicio.nombre}`;
+          serviceDetail.appendChild(image);
+        } else {
+          const placeholder = document.createElement('div');
+          placeholder.className = 'service-detail__placeholder';
+          placeholder.setAttribute('aria-hidden', 'true');
+          placeholder.textContent = '✳';
+          serviceDetail.appendChild(placeholder);
+        }
+
+        const body = document.createElement('div');
+        body.className = 'service-detail__body';
+        const top = document.createElement('div');
+        top.className = 'service-detail__top';
+        const name = document.createElement('h2');
+        name.textContent = servicio.nombre;
+        const price = document.createElement('strong');
+        price.className = 'service-detail__price';
+        price.textContent = precioFormato.format(Number(servicio.precio) || 0);
+        top.append(name, price);
+        body.appendChild(top);
+        const duration = document.createElement('p');
+        duration.className = 'service-detail__duration';
+        duration.textContent = servicio.duracion ? `Duración aprox. ${servicio.duracion}` : 'Duración: a confirmar';
+        body.appendChild(duration);
+        const description = document.createElement('p');
+        description.className = 'service-detail__description';
+        description.textContent = servicio.descripcion || 'Consultanos para conocer todos los detalles de este servicio.';
+        body.appendChild(description);
+        const location = document.createElement('div');
+        location.className = 'service-location';
+        const locationTitle = document.createElement('h3');
+        locationTitle.textContent = 'Ubicación';
+        const locationText = document.createElement('p');
+        locationText.textContent = 'Jainen 178, Ushuaia, Tierra del Fuego, Argentina';
+        location.append(locationTitle, locationText);
+        body.appendChild(location);
+        serviceDetail.appendChild(body);
+        mostrarPaso(2);
+      }
+
+      function fechaISO(fecha) {
+        return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(fecha.getDate()).padStart(2, '0')}`;
+      }
+
+      function crearCalendario() {
+        dateOptions.replaceChildren();
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        for (let offset = 0; offset < 10; offset += 1) {
+          const fecha = new Date(hoy);
+          fecha.setDate(hoy.getDate() + offset);
+          const valor = fechaISO(fecha);
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'date-option';
+          button.setAttribute('aria-pressed', 'false');
+          button.dataset.date = valor;
+          const weekday = document.createElement('span');
+          weekday.textContent = new Intl.DateTimeFormat('es-AR', { weekday: 'short' }).format(fecha).replace('.', '');
+          const day = document.createElement('strong');
+          day.textContent = String(fecha.getDate());
+          const month = document.createElement('small');
+          month.textContent = new Intl.DateTimeFormat('es-AR', { month: 'short' }).format(fecha).replace('.', '');
+          button.append(weekday, day, month);
+          button.addEventListener('click', () => seleccionarFecha(valor, button));
+          dateOptions.appendChild(button);
+        }
+      }
+
+      async function seleccionarFecha(fecha, button) {
+        fechaElegida = fecha;
+        horarioElegido = '';
+        continueToDetails.disabled = true;
+        dateOptions.querySelectorAll('.date-option').forEach((option) => {
+          option.setAttribute('aria-pressed', String(option === button));
+        });
+        timeOptions.innerHTML = '<p class="booking-loading">Buscando horarios disponibles…</p>';
+        if (!window.auraSupabase) {
+          timeOptions.innerHTML = '<p class="booking-loading">Falta configurar Supabase para consultar los horarios.</p>';
+          return;
+        }
+        let data;
+        try {
+          const response = await window.auraSupabase.rpc('get_booked_hours', { p_fecha: fecha });
+          if (response.error) throw response.error;
+          data = response.data;
+        } catch (error) {
+          if (fecha !== fechaElegida) return;
+          console.error('No se pudieron cargar los horarios:', error);
+          timeOptions.innerHTML = '<p class="booking-loading">No se pudieron consultar los horarios. Probá de nuevo.</p>';
+          return;
+        }
+        if (fecha !== fechaElegida) return;
+
+        const ocupados = new Set((data || []).map((turno) => turno.hora));
+        const libres = horarios.filter((hora) => !ocupados.has(hora));
+        timeOptions.replaceChildren();
+        if (!libres.length) {
+          timeOptions.innerHTML = '<p class="booking-loading">No quedan horarios para esta fecha. Elegí otra.</p>';
+          return;
+        }
+        libres.forEach((hora) => {
+          const option = document.createElement('button');
+          option.type = 'button';
+          option.className = 'time-option';
+          option.textContent = `${hora} hs`;
+          option.setAttribute('aria-pressed', 'false');
+          option.addEventListener('click', () => {
+            horarioElegido = hora;
+            timeOptions.querySelectorAll('.time-option').forEach((item) => {
+              item.setAttribute('aria-pressed', String(item === option));
+            });
+            continueToDetails.disabled = false;
+          });
+          timeOptions.appendChild(option);
         });
       }
 
       function actualizarResumen() {
-        const tipoSeleccionado = tipoSelect.selectedOptions[0];
-        const fecha = fechaInput.value;
-        const hora = horaSelect.value;
-        const precio = Number(tipoSeleccionado?.dataset.price);
-
-        document.getElementById('summaryService').textContent =
-          tipoSeleccionado?.value ? tipoSeleccionado.dataset.name : 'A elección';
-        document.getElementById('summaryDate').textContent = fecha
-          ? new Date(`${fecha}T12:00:00`).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' })
-          : 'A elección';
-        document.getElementById('summaryTime').textContent = hora ? `${hora} hs` : 'A elección';
-        document.getElementById('summaryPrice').textContent = tipoSeleccionado?.value && Number.isFinite(precio)
-          ? new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 2 }).format(precio)
-          : 'A confirmar';
+        const fecha = new Date(`${fechaElegida}T12:00:00`);
+        document.getElementById('reviewService').textContent = servicioElegido?.nombre || '';
+        document.getElementById('reviewDate').textContent = new Intl.DateTimeFormat('es-AR', {
+          weekday: 'short',
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric'
+        }).format(fecha);
+        document.getElementById('reviewTime').textContent = `${horarioElegido} hs`;
+        document.getElementById('reviewPrice').textContent = precioFormato.format(Number(servicioElegido?.precio) || 0);
       }
 
-      async function cargarHorariosDisponibles() {
-        const fecha = fechaInput.value;
-        horaSelect.innerHTML = '<option value="">Elegí un horario</option>';
-        horaSelect.disabled = true;
+      document.getElementById('chooseService').addEventListener('click', () => {
+        crearCalendario();
+        mostrarPaso(3);
+      });
+      document.querySelectorAll('[data-go-step]').forEach((button) => {
+        button.addEventListener('click', () => mostrarPaso(Number(button.dataset.goStep)));
+      });
+      continueToDetails.addEventListener('click', () => {
+        if (!fechaElegida || !horarioElegido) return;
+        actualizarResumen();
+        mostrarPaso(4);
+      });
 
-        if (!fecha || !window.auraSupabase) return;
-
-        const { data, error } = await window.auraSupabase
-          .from('turnos')
-          .select('hora')
-          .eq('fecha', fecha);
-
-        if (error) {
-          horaSelect.innerHTML = '<option value="">Error al cargar horarios</option>';
-          return;
-        }
-
-        const ocupados = new Set((data || []).map((turno) => turno.hora));
-        const libres = horarios.filter((hora) => !ocupados.has(hora));
-
-        if (libres.length === 0) {
-          const option = document.createElement('option');
-          option.value = '';
-          option.textContent = 'Sin disponibilidad';
-          horaSelect.appendChild(option);
-          return;
-        }
-
-        libres.forEach((hora) => {
-          const option = document.createElement('option');
-          option.value = hora;
-          option.textContent = `${hora} hs`;
-          horaSelect.appendChild(option);
-        });
-
-        horaSelect.disabled = false;
-      }
-
-      fechaInput.addEventListener('change', cargarHorariosDisponibles);
-      tipoSelect.addEventListener('change', actualizarResumen);
-      fechaInput.addEventListener('change', actualizarResumen);
-      horaSelect.addEventListener('change', actualizarResumen);
-      setFechaMinima();
       cargarTipos();
-      cargarHorariosDisponibles();
-      actualizarResumen();
 
       form.addEventListener('submit', async (event) => {
         event.preventDefault();
         errorBox.textContent = '';
-        successBox.classList.remove('visible');
 
         if (!window.auraSupabase) {
           errorBox.textContent = 'Falta configurar Supabase en el proyecto.';
@@ -552,34 +907,32 @@
 
         const payload = {
           nombre: document.getElementById('nombre').value.trim(),
+          email: document.getElementById('email').value.trim(),
           telefono: document.getElementById('telefono').value.trim(),
-          tipo_id: Number(tipoSelect.value),
-          fecha: fechaInput.value,
-          hora: horaSelect.value,
+          tipo_id: Number(servicioElegido?.id),
+          fecha: fechaElegida,
+          hora: horarioElegido,
           notas: document.getElementById('notas').value.trim(),
           estado: 'pendiente'
         };
 
-        if (!payload.nombre || !payload.telefono || !payload.tipo_id || !payload.fecha || !payload.hora) {
+        if (!payload.nombre || !payload.email || !payload.telefono || !payload.tipo_id || !payload.fecha || !payload.hora) {
           errorBox.textContent = 'Completá todos los campos obligatorios.';
           return;
         }
 
+        submitBooking.disabled = true;
+        submitBooking.textContent = 'Enviando reserva…';
         try {
           const { error } = await window.auraSupabase.from('turnos').insert([payload]);
-
-          if (error) {
-            throw error;
-          }
-
-          form.reset();
-          setFechaMinima();
-          await cargarTipos();
-          await cargarHorariosDisponibles();
+          if (error) throw error;
           window.location.href = './gracias.html';
         } catch (error) {
-          console.error(error);
-          errorBox.textContent = 'Hubo un error al enviar el turno. Revisá la configuración de Supabase.';
+          console.error('No se pudo confirmar la reserva:', error);
+          errorBox.textContent = 'No se pudo confirmar la reserva. Revisá la conexión e intentá de nuevo.';
+        } finally {
+          submitBooking.disabled = false;
+          submitBooking.innerHTML = 'Confirmar reserva <span aria-hidden="true">↗</span>';
         }
       });
     </script>

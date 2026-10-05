@@ -145,7 +145,7 @@
         const busqueda = buscadorTurnos.value.trim().toLocaleLowerCase('es');
         const estado = filtroTurnos.value;
         const filtrados = turnos.filter((turno) => {
-          const texto = `${turno.nombre || ''} ${turno.telefono || ''} ${turno.tipos?.nombre || ''}`.toLocaleLowerCase('es');
+          const texto = `${turno.nombre || ''} ${turno.email || ''} ${turno.telefono || ''} ${turno.tipos?.nombre || ''}`.toLocaleLowerCase('es');
           return texto.includes(busqueda) && (!estado || turno.estado === estado);
         });
         document.getElementById('appointmentResultCount').textContent =
@@ -189,6 +189,7 @@
           const meta = document.createElement('div');
           meta.className = 'management-card__meta';
           [
+            `Correo: ${turno.email || 'Sin correo'}`,
             `Teléfono: ${turno.telefono || 'Sin teléfono'}`,
             `Servicio: ${turno.tipos?.nombre || 'Sin tipo'}`,
             `Fecha: ${fechaLegible(turno.fecha)}`,
