@@ -25,13 +25,89 @@
         <p>Un set para cada estilo y cada momento.</p>
       </section>
 
-      <section class="gallery-empty" aria-label="Galería de diseños próximamente">
+      <section class="design-gallery" id="designGallery" aria-label="Galería de diseños de uñas">
         <span class="gallery-empty__mark" aria-hidden="true">✳</span>
-        <h2>Muy pronto, inspiración</h2>
-        <p>Estamos preparando la galería con los diseños de Aura. En breve vas a poder explorar nuestros sets y elegir tu próximo favorito.</p>
+        <h2 class="gallery-loading">Cargando diseños…</h2>
       </section>
 
       <a class="back-link" href="./inicio.html">Volver al inicio</a>
     </main>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../assets/js/supabase-config.js"></script>
+    <script>
+      const gallery = document.getElementById('designGallery');
+      const client = window.auraSupabase;
+
+      function showGalleryNotice(title, text, failed = false) {
+        gallery.classList.remove('design-gallery--items');
+        const mark = document.createElement('span');
+        mark.className = 'gallery-empty__mark';
+        mark.setAttribute('aria-hidden', 'true');
+        mark.textContent = '✳';
+        const heading = document.createElement('h2');
+        heading.textContent = title;
+        const description = document.createElement('p');
+        description.textContent = text;
+        if (failed) description.classList.add('gallery-error');
+        gallery.replaceChildren(mark, heading, description);
+      }
+
+      async function loadGallery() {
+        if (!client) {
+          showGalleryNotice('Galería no disponible', 'No pudimos cargar los diseños en este momento.', true);
+          return;
+        }
+        const { data, error } = await client.from('disenios')
+          .select('id, titulo, descripcion, categoria, imagen_url')
+          .order('created_at', { ascending: false });
+        if (error) {
+          console.error('No se pudieron cargar los diseños de Aura:', error);
+          showGalleryNotice(
+            'Galería no disponible',
+            ['42P01', 'PGRST205'].includes(error.code)
+              ? 'La galería se está preparando. Volvé pronto para conocer nuestros trabajos.'
+              : 'No pudimos cargar los diseños en este momento.',
+            true
+          );
+          return;
+        }
+        if (!data?.length) {
+          showGalleryNotice('Muy pronto, inspiración', 'Estamos preparando la galería con los diseños de Aura.');
+          return;
+        }
+
+        const cards = document.createDocumentFragment();
+        data.forEach((design) => {
+          const card = document.createElement('article');
+          card.className = 'design-card';
+          const image = document.createElement('img');
+          image.src = design.imagen_url;
+          image.alt = `Diseño de uñas: ${design.titulo}`;
+          image.loading = 'lazy';
+          const caption = document.createElement('div');
+          caption.className = 'design-card__caption';
+          const heading = document.createElement('h2');
+          heading.textContent = design.titulo;
+          caption.appendChild(heading);
+          if (design.categoria) {
+            const category = document.createElement('span');
+            category.className = 'design-card__category';
+            category.textContent = design.categoria;
+            caption.appendChild(category);
+          }
+          if (design.descripcion) {
+            const description = document.createElement('p');
+            description.textContent = design.descripcion;
+            caption.appendChild(description);
+          }
+          card.append(image, caption);
+          cards.appendChild(card);
+        });
+        gallery.classList.add('design-gallery--items');
+        gallery.replaceChildren(cards);
+      }
+
+      loadGallery();
+    </script>
   </body>
 </html>

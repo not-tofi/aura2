@@ -28,10 +28,61 @@
       <section class="info-card" aria-label="Información de Aura Nails">
         <h2>Tu momento, tu estilo</h2>
         <p>En Aura celebramos los detalles y creamos sets pensados para que tus uñas expresen tu estilo.</p>
-        <div class="social-note">Muy pronto vas a poder encontrarnos en nuestras redes. Estamos preparando este espacio para compartir novedades y trabajos de Aura.</div>
+        <div class="social-note" id="socialLinks" aria-live="polite">Cargando nuestras redes…</div>
       </section>
 
       <a class="back-link" href="./inicio.html">Volver al inicio</a>
     </main>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../assets/js/supabase-config.js"></script>
+    <script>
+      const socialContainer = document.getElementById('socialLinks');
+      const client = window.auraSupabase;
+      if (client) {
+        client.from('redes_sociales')
+          .select('id, nombre, url')
+          .order('orden', { ascending: true })
+          .order('nombre', { ascending: true })
+          .then(({ data, error }) => {
+            if (error) throw error;
+            if (!data?.length) {
+              socialContainer.textContent = 'Muy pronto vas a poder encontrarnos en nuestras redes.';
+              return;
+            }
+            const links = document.createElement('div');
+            links.className = 'social-links';
+            data.forEach((social) => {
+              let url;
+              try {
+                url = new URL(social.url);
+              } catch (error) {
+                console.error('Se omitió un enlace social inválido.', error);
+                return;
+              }
+              if (!['https:', 'http:'].includes(url.protocol)) return;
+              const link = document.createElement('a');
+              link.href = url.href;
+              link.target = '_blank';
+              link.rel = 'noopener noreferrer';
+              link.textContent = social.nombre;
+              links.appendChild(link);
+            });
+            if (!links.childElementCount) {
+              socialContainer.textContent = 'Muy pronto vas a poder encontrarnos en nuestras redes.';
+              return;
+            }
+            socialContainer.replaceChildren(
+              document.createTextNode('Seguinos y conocé más de Aura:'),
+              links
+            );
+          })
+          .catch((error) => {
+            console.error('No se pudieron cargar las redes de Aura:', error);
+            socialContainer.textContent = 'No pudimos cargar las redes en este momento.';
+          });
+      } else {
+        socialContainer.textContent = 'No pudimos cargar las redes en este momento.';
+      }
+    </script>
   </body>
 </html>

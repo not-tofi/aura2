@@ -6,6 +6,8 @@
 - `public/gracias.html`: pantalla de confirmación.
 - `public/aura.html`: información sobre Aura y sus redes.
 - `public/disenios.html`: galería de diseños de uñas.
+- `admin/redes.html`: administración de enlaces sociales que aparecen en `public/aura.html`.
+- `admin/disenios.html`: carga, edición y eliminación de las fotos de `public/disenios.html`.
 - `index.html`: portada con accesos a reservas, información y diseños.
 - `public/inicio.html`: portada para volver al inicio desde el contenido interno sin cambiar la dirección visible.
 - `assets/js/root-url.js`: mantiene la navegación interna en `https://auranails.shop/` y permite reabrir la última vista al recargar.
@@ -29,7 +31,7 @@ window.AURA_SUPABASE = {
 
 5. Ejecutar el SQL de `supabase/schema.sql` en el SQL editor de Supabase.
 
-Si el proyecto ya tenía las tablas y políticas creadas, volvé a ejecutar `supabase/schema.sql` para actualizar las políticas, agregar a los servicios descripción, duración e imagen demostrativa, permitir guardar el correo en las reservas, crear el bucket público de imágenes `servicios`, agregar a los turnos los campos de forma de pago y precio pagado, crear la tabla privada de fichas de clientes y habilitar el borrado administrativo de turnos. La reserva pública consulta los horarios ocupados mediante una función que no expone los datos personales del resto de las clientas. Después de ejecutar el esquema, el panel de Servicios permite cargar imágenes JPG, PNG o WebP de hasta 5 MB. La página Clientes solo mostrará las fichas agregadas manualmente por el administrador; reservar un turno no crea una ficha ni borrar una ficha elimina turnos. Desde Historial se pueden borrar turnos seleccionados (con confirmación); la economía mensual calcula ingresos solo con el precio pagado guardado al finalizar cada atención.
+Si el proyecto ya tenía las tablas y políticas creadas, volvé a ejecutar `supabase/schema.sql` para actualizar las políticas, agregar a los servicios descripción, duración e imagen demostrativa, permitir guardar el correo en las reservas, crear los buckets públicos de imágenes `servicios` y `disenios`, crear las tablas `redes_sociales` y `disenios`, agregar a los turnos los campos de forma de pago y precio pagado, crear la tabla privada de fichas de clientes y habilitar el borrado administrativo de turnos. El SQL puede ejecutarse nuevamente para aplicar las tablas, buckets y políticas faltantes. La reserva pública consulta los horarios ocupados mediante una función que no expone los datos personales del resto de las clientas. Los paneles de Servicios y Diseños permiten cargar JPG, PNG o WebP de hasta 5 MB. Las redes guardadas desde Administración aparecen en la página Aura; los diseños publicados se muestran en la galería pública. La página Clientes solo mostrará las fichas agregadas manualmente por el administrador; reservar un turno no crea una ficha ni borrar una ficha elimina turnos. Desde Historial se pueden borrar turnos seleccionados (con confirmación); la economía mensual calcula ingresos solo con el precio pagado guardado al finalizar cada atención.
 
 ## Login admin por correo electrónico
 

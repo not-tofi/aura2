@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Redes sociales - Admin</title>
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="stylesheet" href="../assets/css/admin-pages.css" />
+    <script src="../assets/js/root-url.js"></script>
+  </head>
+  <body class="admin-page">
+    <button class="btn-opciones" type="button" aria-expanded="false" aria-label="Abrir menú">
+      <span class="logoo" aria-hidden="true"></span>
+      <p>menu</p>
+    </button>
+    <nav class="menu-lateral" id="menu-lateral" aria-hidden="true">
+      <div class="menu-header">
+        <h3>Aura Nails</h3>
+        <button class="menu-cerrar" type="button" aria-label="Cerrar menú">×</button>
+      </div>
+      <div class="menu-nav">
+        <a href="index.html">Inicio</a>
+        <a href="turnos.html">Turnos</a>
+        <a href="clientes.html">Clientes</a>
+        <a href="servicios.html">Servicios</a>
+        <a href="redes.html" aria-current="page">Redes sociales</a>
+        <a href="disenios.html">Diseños</a>
+        <a href="historial.html">Historial</a>
+        <a href="login.html" id="logoutBtn">Cerrar sesión</a>
+      </div>
+    </nav>
+    <div class="app-shell">
+      <main class="content">
+        <div class="admin-management">
+          <header class="management-heading">
+            <div>
+              <p class="management-heading__eyebrow">Conectá con Aura</p>
+              <h1>Redes sociales</h1>
+              <p class="management-heading__copy">Agregá los perfiles que quieras mostrar en la página pública de Aura. Podés editarlos o quitarlos cuando quieras.</p>
+            </div>
+          </header>
+          <section class="management-panel" aria-label="Administrar redes sociales">
+            <h2 class="management-card__title" id="socialFormTitle">Agregar una red social</h2>
+            <form class="service-form" id="socialForm">
+              <label for="socialName">Nombre de la red
+                <input id="socialName" type="text" maxlength="60" placeholder="Ej.: Instagram, TikTok, WhatsApp" required />
+              </label>
+              <label for="socialUrl">Enlace al perfil
+                <input id="socialUrl" type="url" maxlength="500" placeholder="https://..." required />
+              </label>
+              <label for="socialOrder">Orden de aparición
+                <input id="socialOrder" type="number" min="0" max="999" step="1" value="0" />
+              </label>
+              <button type="submit" id="saveSocial">Agregar red <span aria-hidden="true">+</span></button>
+              <button type="button" class="service-form__cancel" id="cancelSocialEdit" hidden>Cancelar edición</button>
+              <p class="service-form__message" id="socialMessage" aria-live="polite"></p>
+            </form>
+            <div class="management-toolbar">
+              <div class="management-toolbar__controls">
+                <input class="management-search" id="socialSearch" type="search" placeholder="Buscar una red" aria-label="Buscar redes sociales" />
+              </div>
+              <span class="management-count" id="socialCount" aria-live="polite"></span>
+            </div>
+            <div class="management-list" id="socialList" aria-live="polite">
+              <p class="management-notice">Cargando redes sociales…</p>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../assets/js/supabase-config.js"></script>
+    <script>
+      const client = window.auraSupabase;
+      const form = document.getElementById('socialForm');
+      const message = document.getElementById('socialMessage');
+      const list = document.getElementById('socialList');
+      const saveButton = document.getElementById('saveSocial');
+      const cancelButton = document.getElementById('cancelSocialEdit');
+      const search = document.getElementById('socialSearch');
+      let socials = [];
+      let editingSocial = null;
+
+      async function verifyAdmin() {
+        if (!window.AURA_SUPABASE || !client) {
+          window.location.href = 'login.html';
+          return;
+        }
+        await window.AURA_SUPABASE.ensureAdminAccess();
+      }
+
+      document.getElementById('logoutBtn').addEventListener('click', async () => {
+        if (client) await client.auth.signOut();
+        localStorage.removeItem('adminSession');
+        window.location.href = 'login.html';
+      });
+
+      const menuButton = document.querySelector('.btn-opciones');
+      const sideMenu = document.getElementById('menu-lateral');
+      const closeMenu = document.querySelector('.menu-cerrar');
+      function toggleMenu(open) {
+        sideMenu.classList.toggle('open', open);
+        menuButton.setAttribute('aria-expanded', String(open));
+        sideMenu.setAttribute('aria-hidden', String(!open));
+      }
+      menuButton.addEventListener('click', () => toggleMenu(!sideMenu.classList.contains('open')));
+      closeMenu.addEventListener('click', () => toggleMenu(false));
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') toggleMenu(false);
+      });
+
+      function showMessage(text, kind = '') {
+        message.textContent = text;
+        message.dataset.kind = kind;
+      }
+
+      function showLoadError(error) {
+        console.error('No se pudieron cargar las redes sociales:', error);
+        const notice = document.createElement('p');
+        notice.className = 'management-notice management-notice--error';
+        notice.textContent = ['42P01', 'PGRST205'].includes(error.code)
+          ? 'Falta crear la tabla de redes sociales. Ejecutá supabase/schema.sql en Supabase y recargá esta página.'
+          : 'No se pudieron cargar las redes sociales. Volvé a intentarlo.';
+        list.replaceChildren(notice);
+      }
+
+      function renderSocials() {
+        const query = search.value.trim().toLocaleLowerCase('es');
+        const filtered = socials.filter((social) => social.nombre.toLocaleLowerCase('es').includes(query));
+        document.getElementById('socialCount').textContent = `${filtered.length} ${filtered.length === 1 ? 'red' : 'redes'}`;
+        list.replaceChildren();
+        if (!filtered.length) {
+          const notice = document.createElement('p');
+          notice.className = 'management-notice';
+          notice.textContent = socials.length ? 'No hay redes que coincidan con la búsqueda.' : 'Todavía no agregaste redes sociales.';
+          list.appendChild(notice);
+          return;
+        }
+
+        filtered.forEach((social) => {
+          const card = document.createElement('article');
+          card.className = 'management-card';
+          const top = document.createElement('div');
+          top.className = 'management-card__top';
+          const name = document.createElement('h3');
+          name.className = 'management-card__title';
+          name.textContent = social.nombre;
+          const link = document.createElement('a');
+          link.className = 'management-action';
+          link.href = social.url;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          link.textContent = 'Abrir perfil ↗';
+          top.append(name, link);
+          const url = document.createElement('p');
+          url.className = 'management-card__description';
+          url.textContent = social.url;
+          const actions = document.createElement('div');
+          actions.className = 'management-actions';
+          const edit = document.createElement('button');
+          edit.className = 'management-action';
+          edit.type = 'button';
+          edit.textContent = 'Editar';
+          edit.addEventListener('click', () => editSocial(social));
+          const remove = document.createElement('button');
+          remove.className = 'management-action management-action--delete';
+          remove.type = 'button';
+          remove.textContent = 'Eliminar';
+          remove.addEventListener('click', () => deleteSocial(social));
+          actions.append(edit, remove);
+          card.append(top, url, actions);
+          list.appendChild(card);
+        });
+      }
+
+      async function loadSocials() {
+        if (!client) return showLoadError({ message: 'Supabase no está configurado.' });
+        const { data, error } = await client.from('redes_sociales')
+          .select('id, nombre, url, orden')
+          .order('orden', { ascending: true })
+          .order('nombre', { ascending: true });
+        if (error) return showLoadError(error);
+        socials = data || [];
+        renderSocials();
+      }
+
+      function editSocial(social) {
+        editingSocial = social;
+        document.getElementById('socialFormTitle').textContent = `Editar: ${social.nombre}`;
+        document.getElementById('socialName').value = social.nombre;
+        document.getElementById('socialUrl').value = social.url;
+        document.getElementById('socialOrder').value = String(social.orden);
+        saveButton.textContent = 'Guardar cambios';
+        cancelButton.hidden = false;
+        showMessage('');
+        form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        document.getElementById('socialName').focus({ preventScroll: true });
+      }
+
+      function resetForm() {
+        editingSocial = null;
+        form.reset();
+        document.getElementById('socialOrder').value = '0';
+        document.getElementById('socialFormTitle').textContent = 'Agregar una red social';
+        saveButton.innerHTML = 'Agregar red <span aria-hidden="true">+</span>';
+        cancelButton.hidden = true;
+        showMessage('');
+      }
+      cancelButton.addEventListener('click', resetForm);
+      search.addEventListener('input', renderSocials);
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const name = document.getElementById('socialName').value.trim();
+        const rawUrl = document.getElementById('socialUrl').value.trim();
+        const order = Number(document.getElementById('socialOrder').value) || 0;
+        let url;
+        try {
+          url = new URL(rawUrl);
+        } catch {
+          showMessage('Ingresá un enlace válido que comience con https://.', 'error');
+          return;
+        }
+        if (!['https:', 'http:'].includes(url.protocol)) {
+          showMessage('El enlace debe usar https:// o http://.', 'error');
+          return;
+        }
+        saveButton.disabled = true;
+        cancelButton.disabled = true;
+        showMessage('Guardando…');
+        try {
+          const values = { nombre: name, url: url.href, orden: Math.min(Math.max(order, 0), 999) };
+          const query = editingSocial
+            ? client.from('redes_sociales').update(values).eq('id', editingSocial.id)
+            : client.from('redes_sociales').insert(values);
+          const { data, error } = await query.select('id').maybeSingle();
+          if (error) throw error;
+          if (!data) throw new Error('No se guardó la red. Verificá que sigas conectada como administradora.');
+          const wasEditing = Boolean(editingSocial);
+          resetForm();
+          showMessage(wasEditing ? 'Red social actualizada.' : 'Red social agregada.', 'success');
+          await loadSocials();
+        } catch (error) {
+          console.error('No se pudo guardar la red social:', error);
+          showMessage(error.message || 'No se pudo guardar la red social.', 'error');
+        } finally {
+          saveButton.disabled = false;
+          cancelButton.disabled = false;
+        }
+      });
+
+      async function deleteSocial(social) {
+        if (!window.confirm(`¿Eliminar el enlace de ${social.nombre}?`)) return;
+        const { error } = await client.from('redes_sociales').delete().eq('id', social.id);
+        if (error) {
+          console.error('No se pudo eliminar la red social:', error);
+          showMessage(error.message || 'No se pudo eliminar la red social.', 'error');
+          return;
+        }
+        showMessage('Red social eliminada.', 'success');
+        await loadSocials();
+      }
+
+      verifyAdmin();
+      loadSocials();
+    </script>
+  </body>
+</html>

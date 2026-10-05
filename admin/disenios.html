@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Diseños - Admin</title>
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="stylesheet" href="../assets/css/admin-pages.css" />
+    <script src="../assets/js/root-url.js"></script>
+  </head>
+  <body class="admin-page">
+    <button class="btn-opciones" type="button" aria-expanded="false" aria-label="Abrir menú">
+      <span class="logoo" aria-hidden="true"></span>
+      <p>menu</p>
+    </button>
+    <nav class="menu-lateral" id="menu-lateral" aria-hidden="true">
+      <div class="menu-header">
+        <h3>Aura Nails</h3>
+        <button class="menu-cerrar" type="button" aria-label="Cerrar menú">×</button>
+      </div>
+      <div class="menu-nav">
+        <a href="index.html">Inicio</a>
+        <a href="turnos.html">Turnos</a>
+        <a href="clientes.html">Clientes</a>
+        <a href="servicios.html">Servicios</a>
+        <a href="redes.html">Redes sociales</a>
+        <a href="disenios.html" aria-current="page">Diseños</a>
+        <a href="historial.html">Historial</a>
+        <a href="login.html" id="logoutBtn">Cerrar sesión</a>
+      </div>
+    </nav>
+    <div class="app-shell">
+      <main class="content">
+        <div class="admin-management">
+          <header class="management-heading">
+            <div>
+              <p class="management-heading__eyebrow">Inspiración Aura</p>
+              <h1>Diseños de uñas</h1>
+              <p class="management-heading__copy">Cargá fotos para la galería pública. Cada imagen admite título, categoría y una breve descripción.</p>
+            </div>
+          </header>
+          <section class="management-panel" aria-label="Administrar diseños de uñas">
+            <h2 class="management-card__title" id="designFormTitle">Publicar un diseño</h2>
+            <form class="service-form" id="designForm">
+              <label for="designTitle">Título
+                <input id="designTitle" type="text" maxlength="100" placeholder="Ej.: Francesitas con brillo" required />
+              </label>
+              <label for="designCategory">Categoría
+                <input id="designCategory" type="text" maxlength="60" placeholder="Ej.: Esculpidas, semi" />
+              </label>
+              <label class="service-form__wide" for="designDescription">Descripción <span>(opcional)</span>
+                <textarea id="designDescription" rows="3" maxlength="500" placeholder="Contá algo sobre este diseño…"></textarea>
+              </label>
+              <label class="service-form__wide" for="designImage">Foto del diseño
+                <input id="designImage" type="file" accept="image/jpeg,image/png,image/webp" />
+                <small>JPG, PNG o WebP · hasta 5 MB · podés dejar la foto actual al editar</small>
+              </label>
+              <div class="service-image-preview service-form__wide" id="designPreview" hidden>
+                <img id="designPreviewImage" alt="Vista previa del diseño" />
+              </div>
+              <button type="submit" id="saveDesign">Publicar diseño <span aria-hidden="true">+</span></button>
+              <button type="button" class="service-form__cancel" id="cancelDesignEdit" hidden>Cancelar edición</button>
+              <p class="service-form__message" id="designMessage" aria-live="polite"></p>
+            </form>
+            <div class="management-toolbar">
+              <div class="management-toolbar__controls">
+                <input class="management-search" id="designSearch" type="search" placeholder="Buscar por título o categoría" aria-label="Buscar diseños" />
+              </div>
+              <span class="management-count" id="designCount" aria-live="polite"></span>
+            </div>
+            <div class="management-list" id="designList" aria-live="polite">
+              <p class="management-notice">Cargando diseños…</p>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../assets/js/supabase-config.js"></script>
+    <script>
+      const client = window.auraSupabase;
+      const form = document.getElementById('designForm');
+      const message = document.getElementById('designMessage');
+      const list = document.getElementById('designList');
+      const saveButton = document.getElementById('saveDesign');
+      const cancelButton = document.getElementById('cancelDesignEdit');
+      const imageInput = document.getElementById('designImage');
+      const preview = document.getElementById('designPreview');
+      const previewImage = document.getElementById('designPreviewImage');
+      const search = document.getElementById('designSearch');
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+      const extensionByType = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+      let designs = [];
+      let editingDesign = null;
+      let temporaryImageUrl = null;
+
+      async function verifyAdmin() {
+        if (!window.AURA_SUPABASE || !client) {
+          window.location.href = 'login.html';
+          return;
+        }
+        await window.AURA_SUPABASE.ensureAdminAccess();
+      }
+
+      document.getElementById('logoutBtn').addEventListener('click', async () => {
+        if (client) await client.auth.signOut();
+        localStorage.removeItem('adminSession');
+        window.location.href = 'login.html';
+      });
+
+      const menuButton = document.querySelector('.btn-opciones');
+      const sideMenu = document.getElementById('menu-lateral');
+      const closeMenu = document.querySelector('.menu-cerrar');
+      function toggleMenu(open) {
+        sideMenu.classList.toggle('open', open);
+        menuButton.setAttribute('aria-expanded', String(open));
+        sideMenu.setAttribute('aria-hidden', String(!open));
+      }
+      menuButton.addEventListener('click', () => toggleMenu(!sideMenu.classList.contains('open')));
+      closeMenu.addEventListener('click', () => toggleMenu(false));
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') toggleMenu(false);
+      });
+
+      function showMessage(text, kind = '') {
+        message.textContent = text;
+        message.dataset.kind = kind;
+      }
+
+      function showLoadError(error) {
+        console.error('No se pudieron cargar los diseños:', error);
+        const notice = document.createElement('p');
+        notice.className = 'management-notice management-notice--error';
+        notice.textContent = ['42P01', 'PGRST205'].includes(error.code)
+          ? 'Falta crear la tabla de diseños. Ejecutá supabase/schema.sql en Supabase y recargá esta página.'
+          : 'No se pudieron cargar los diseños. Volvé a intentarlo.';
+        list.replaceChildren(notice);
+      }
+
+      function renderDesigns() {
+        const query = search.value.trim().toLocaleLowerCase('es');
+        const filtered = designs.filter((design) =>
+          `${design.titulo} ${design.categoria}`.toLocaleLowerCase('es').includes(query)
+        );
+        document.getElementById('designCount').textContent =
+          `${filtered.length} ${filtered.length === 1 ? 'diseño' : 'diseños'}`;
+        list.replaceChildren();
+        if (!filtered.length) {
+          const notice = document.createElement('p');
+          notice.className = 'management-notice';
+          notice.textContent = designs.length ? 'No hay diseños que coincidan con la búsqueda.' : 'Todavía no publicaste diseños.';
+          list.appendChild(notice);
+          return;
+        }
+        filtered.forEach((design) => {
+          const card = document.createElement('article');
+          card.className = 'management-card';
+          const image = document.createElement('img');
+          image.className = 'management-card__image';
+          image.src = design.imagen_url;
+          image.alt = `Diseño de uñas: ${design.titulo}`;
+          image.loading = 'lazy';
+          const top = document.createElement('div');
+          top.className = 'management-card__top';
+          const title = document.createElement('h3');
+          title.className = 'management-card__title';
+          title.textContent = design.titulo;
+          top.appendChild(title);
+          const meta = document.createElement('div');
+          meta.className = 'management-card__meta';
+          if (design.categoria) {
+            const category = document.createElement('span');
+            category.textContent = design.categoria;
+            meta.appendChild(category);
+          }
+          if (design.descripcion) {
+            const description = document.createElement('p');
+            description.className = 'management-card__description';
+            description.textContent = design.descripcion;
+            meta.appendChild(description);
+          }
+          const actions = document.createElement('div');
+          actions.className = 'management-actions';
+          const edit = document.createElement('button');
+          edit.className = 'management-action';
+          edit.type = 'button';
+          edit.textContent = 'Editar';
+          edit.addEventListener('click', () => editDesign(design));
+          const remove = document.createElement('button');
+          remove.className = 'management-action management-action--delete';
+          remove.type = 'button';
+          remove.textContent = 'Eliminar';
+          remove.addEventListener('click', () => deleteDesign(design));
+          actions.append(edit, remove);
+          card.append(image, top, meta, actions);
+          list.appendChild(card);
+        });
+      }
+
+      async function loadDesigns() {
+        if (!client) return showLoadError({ message: 'Supabase no está configurado.' });
+        const { data, error } = await client.from('disenios')
+          .select('id, titulo, descripcion, categoria, imagen_url, imagen_path, created_at')
+          .order('created_at', { ascending: false });
+        if (error) return showLoadError(error);
+        designs = data || [];
+        renderDesigns();
+      }
+
+      function editDesign(design) {
+        editingDesign = design;
+        document.getElementById('designFormTitle').textContent = `Editar: ${design.titulo}`;
+        document.getElementById('designTitle').value = design.titulo;
+        document.getElementById('designCategory').value = design.categoria || '';
+        document.getElementById('designDescription').value = design.descripcion || '';
+        previewImage.src = design.imagen_url;
+        preview.hidden = false;
+        saveButton.textContent = 'Guardar cambios';
+        cancelButton.hidden = false;
+        showMessage('');
+        form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        document.getElementById('designTitle').focus({ preventScroll: true });
+      }
+
+      function resetForm() {
+        editingDesign = null;
+        form.reset();
+        if (temporaryImageUrl) URL.revokeObjectURL(temporaryImageUrl);
+        temporaryImageUrl = null;
+        previewImage.removeAttribute('src');
+        preview.hidden = true;
+        document.getElementById('designFormTitle').textContent = 'Publicar un diseño';
+        saveButton.innerHTML = 'Publicar diseño <span aria-hidden="true">+</span>';
+        cancelButton.hidden = true;
+        showMessage('');
+      }
+      cancelButton.addEventListener('click', resetForm);
+      search.addEventListener('input', renderDesigns);
+
+      imageInput.addEventListener('change', () => {
+        const file = imageInput.files[0];
+        if (temporaryImageUrl) URL.revokeObjectURL(temporaryImageUrl);
+        temporaryImageUrl = file ? URL.createObjectURL(file) : null;
+        if (temporaryImageUrl) {
+          previewImage.src = temporaryImageUrl;
+          preview.hidden = false;
+        } else if (editingDesign) {
+          previewImage.src = editingDesign.imagen_url;
+          preview.hidden = false;
+        } else {
+          preview.hidden = true;
+        }
+      });
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const title = document.getElementById('designTitle').value.trim();
+        const category = document.getElementById('designCategory').value.trim();
+        const description = document.getElementById('designDescription').value.trim();
+        const file = imageInput.files[0];
+        if (!editingDesign && !file) {
+          showMessage('Elegí una foto para publicar el diseño.', 'error');
+          return;
+        }
+        if (file && (!allowedTypes.includes(file.type) || file.size > 5 * 1024 * 1024)) {
+          showMessage('La foto debe ser JPG, PNG o WebP y pesar hasta 5 MB.', 'error');
+          return;
+        }
+        saveButton.disabled = true;
+        cancelButton.disabled = true;
+        let newImagePath = null;
+        try {
+          let imageUrl = editingDesign?.imagen_url || null;
+          let imagePath = editingDesign?.imagen_path || null;
+          if (file) {
+            newImagePath = `${crypto.randomUUID()}.${extensionByType[file.type]}`;
+            const { error: uploadError } = await client.storage.from('disenios').upload(newImagePath, file, {
+              cacheControl: '3600',
+              contentType: file.type,
+              upsert: false
+            });
+            if (uploadError) throw uploadError;
+            imagePath = newImagePath;
+            imageUrl = client.storage.from('disenios').getPublicUrl(imagePath).data.publicUrl;
+          }
+          const values = { titulo: title, categoria: category, descripcion: description, imagen_url: imageUrl, imagen_path: imagePath };
+          const query = editingDesign
+            ? client.from('disenios').update(values).eq('id', editingDesign.id)
+            : client.from('disenios').insert(values);
+          const { data, error } = await query.select('id').maybeSingle();
+          if (error) throw error;
+          if (!data) throw new Error('No se guardó el diseño. Verificá que sigas conectada como administradora.');
+
+          const oldPath = editingDesign?.imagen_path;
+          const wasEditing = Boolean(editingDesign);
+          resetForm();
+          if (oldPath && oldPath !== imagePath) {
+            const { error: removeError } = await client.storage.from('disenios').remove([oldPath]);
+            if (removeError) console.warn('No se pudo quitar la foto anterior del diseño:', removeError);
+          }
+          showMessage(wasEditing ? 'Diseño actualizado.' : 'Diseño publicado.', 'success');
+          await loadDesigns();
+        } catch (error) {
+          console.error('No se pudo guardar el diseño:', error);
+          if (newImagePath) {
+            const { error: cleanupError } = await client.storage.from('disenios').remove([newImagePath]);
+            if (cleanupError) console.warn('No se pudo limpiar la foto no guardada:', cleanupError);
+          }
+          showMessage(error.message || 'No se pudo guardar el diseño.', 'error');
+        } finally {
+          saveButton.disabled = false;
+          cancelButton.disabled = false;
+        }
+      });
+
+      async function deleteDesign(design) {
+        if (!window.confirm(`¿Eliminar el diseño "${design.titulo}" de la galería?`)) return;
+        const { error } = await client.from('disenios').delete().eq('id', design.id);
+        if (error) {
+          console.error('No se pudo eliminar el diseño:', error);
+          showMessage(error.message || 'No se pudo eliminar el diseño.', 'error');
+          return;
+        }
+        if (design.imagen_path) {
+          const { error: storageError } = await client.storage.from('disenios').remove([design.imagen_path]);
+          if (storageError) {
+            console.error('El diseño se eliminó pero no se pudo eliminar su foto:', storageError);
+            showMessage('El diseño se eliminó, pero su foto quedó guardada en el almacenamiento.', 'error');
+          }
+        }
+        await loadDesigns();
+      }
+
+      verifyAdmin();
+      loadDesigns();
+    </script>
+  </body>
+</html>

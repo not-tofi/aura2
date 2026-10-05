@@ -16,6 +16,8 @@
     ['admin/turnos.html', 'admin/turnos.html'],
     ['admin/clientes.html', 'admin/clientes.html'],
     ['admin/servicios.html', 'admin/servicios.html'],
+    ['admin/redes.html', 'admin/redes.html'],
+    ['admin/disenios.html', 'admin/disenios.html'],
     ['admin/historial.html', 'admin/historial.html'],
     ['admin/login.html', 'admin/login.html'],
     ['admin/tipos.html', 'admin/servicios.html']
