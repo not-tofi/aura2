@@ -41,8 +41,14 @@ self.addEventListener('fetch', (event) => {
   if (requestUrl.origin !== self.location.origin || event.request.headers.has('authorization')) return;
 
   if (event.request.mode === 'navigate') {
+    const navigationUrl = new URL(event.request.url);
+    const scopeUrl = new URL(self.registration.scope);
+    if (navigationUrl.pathname === scopeUrl.pathname) {
+      navigationUrl.searchParams.set('aura-release', CACHE_NAME);
+    }
+
     event.respondWith(
-      fetch(event.request).then(async (response) => {
+      fetch(navigationUrl, { cache: 'no-store' }).then(async (response) => {
         if (response.ok) {
           const cache = await caches.open(CACHE_NAME);
           await cache.put(event.request, response.clone());
