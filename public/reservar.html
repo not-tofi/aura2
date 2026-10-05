@@ -13,6 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <script src="../assets/js/root-url.js"></script>
     <title>Reservar turno - Aura Nails</title>
     <style>
       :root {
@@ -493,13 +494,13 @@
   <body>
     <div class="wrap">
       <div class="card">
-        <a class="brand-lockup" href="../index.html" aria-label="Aura Nails, volver al inicio">
+        <a class="brand-lockup" href="./inicio.html" aria-label="Aura Nails, volver al inicio">
           <img src="../assets/img/aura-icon.png" alt="" />
           <span><strong>AURA</strong><small>NAIL STUDIO</small></span>
         </a>
         <div class="booking-layout">
           <div class="booking-main">
-            <a class="back-link" href="../index.html">← Volver al inicio</a>
+            <a class="back-link" href="./inicio.html">← Volver al inicio</a>
             <header class="booking-header">
               <p class="eyebrow">Tu momento de cuidado</p>
               <h1>Reservá tu turno</h1>
@@ -783,7 +784,7 @@
         const locationTitle = document.createElement('h3');
         locationTitle.textContent = 'Ubicación';
         const locationText = document.createElement('p');
-        locationText.textContent = 'Jainen 178, Ushuaia, Tierra del Fuego, Argentina';
+        locationText.textContent = 'a confirmar';
         location.append(locationTitle, locationText);
         body.appendChild(location);
         serviceDetail.appendChild(body);

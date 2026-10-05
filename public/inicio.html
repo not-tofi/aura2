@@ -5,29 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#f4eee7" />
     <meta name="description" content="Aura Nails: reservá tu turno, conocé Aura y descubrí diseños de uñas." />
-    <link rel="manifest" href="./manifest.json" />
-    <link rel="icon" href="./assets/img/aura-icon.png" type="image/png" />
-    <link rel="stylesheet" href="./assets/css/home.css" />
-    <script src="./assets/js/root-url.js"></script>
+    <link rel="manifest" href="../manifest.json" />
+    <link rel="icon" href="../assets/img/aura-icon.png" type="image/png" />
+    <link rel="stylesheet" href="../assets/css/home.css" />
+    <script src="../assets/js/root-url.js"></script>
     <title>Aura Nails — Un espacio para vos</title>
-    <style>
-      #auraContent {
-        position: fixed;
-        z-index: 10;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        border: 0;
-        background: #f4eee7;
-      }
-      #auraContent[hidden] { display: none; }
-      main.home[hidden] { display: none; }
-    </style>
   </head>
   <body>
     <main class="home">
       <header class="brand">
-        <img class="brand__logo" src="./assets/img/aura-icon.png" alt="Logo de Aura" />
+        <img class="brand__logo" src="../assets/img/aura-icon.png" alt="Logo de Aura" />
         <span class="brand__name">AURA</span>
         <span class="brand__caption">NAIL STUDIO</span>
       </header>
@@ -39,7 +26,7 @@
       </section>
 
       <nav class="home-links" aria-label="Explorá Aura">
-        <a class="home-link home-link--booking" href="./public/reservar.html" target="aura-content">
+        <a class="home-link home-link--booking" href="./reservar.html">
           <span class="home-link__number">01</span>
           <span class="home-link__text">
             <strong>Reservá tu turno</strong>
@@ -47,7 +34,7 @@
           </span>
           <span class="home-link__arrow" aria-hidden="true">↗</span>
         </a>
-        <a class="home-link" href="./public/aura.html" target="aura-content">
+        <a class="home-link" href="./aura.html">
           <span class="home-link__number">02</span>
           <span class="home-link__text">
             <strong>Aura y nuestras redes</strong>
@@ -55,7 +42,7 @@
           </span>
           <span class="home-link__arrow" aria-hidden="true">↗</span>
         </a>
-        <a class="home-link" href="./public/disenios.html" target="aura-content">
+        <a class="home-link" href="./disenios.html">
           <span class="home-link__number">03</span>
           <span class="home-link__text">
             <strong>Diseños de uñas</strong>
@@ -67,12 +54,5 @@
 
       <footer class="home-footer">Belleza en cada detalle <span aria-hidden="true">✳</span></footer>
     </main>
-    <iframe id="auraContent" name="aura-content" title="Contenido de Aura Nails" hidden></iframe>
-    <script>
-      window.AURA_URL_SHELL.start(
-        document.getElementById('auraContent'),
-        document.querySelector('main.home')
-      );
-    </script>
   </body>
 </html>

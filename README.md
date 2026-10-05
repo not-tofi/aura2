@@ -7,6 +7,8 @@
 - `public/aura.html`: información sobre Aura y sus redes.
 - `public/disenios.html`: galería de diseños de uñas.
 - `index.html`: portada con accesos a reservas, información y diseños.
+- `public/inicio.html`: portada para volver al inicio desde el contenido interno sin cambiar la dirección visible.
+- `assets/js/root-url.js`: mantiene la navegación interna en `https://auranails.shop/` y permite reabrir la última vista al recargar.
 - `admin/*.html`: panel administrativo, con gestión de servicios en `admin/servicios.html`.
 - `supabase/schema.sql`: esquema de base de datos para Supabase.
 - `assets/js/supabase-config.js`: configuración base para Supabase.
@@ -72,6 +74,8 @@ Para habilitarlo en GitHub:
 5. Subir los cambios a `main` y esperar a que termine el workflow **Deploy to GitHub Pages**.
 
 La dirección principal del sitio será <https://auranails.shop/>. GitHub Pages puede tardar en detectar los cambios DNS y emitir el certificado HTTPS.
+
+La navegación de la portada carga las páginas públicas y administrativas dentro de la aplicación, de modo que la barra de direcciones siga mostrando sólo el dominio. Las rutas HTML siguen existiendo y pueden inspeccionarse o solicitarse directamente; ocultarlas no reemplaza el control de acceso. La autenticación de Supabase y las políticas RLS siguen siendo necesarias para proteger el panel y sus datos.
 
 ### Supabase en producción
 

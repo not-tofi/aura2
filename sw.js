@@ -1,9 +1,10 @@
-const CACHE_NAME = 'aura-nails-v6';
+const CACHE_NAME = 'aura-nails-v7';
 const ASSETS = [
   './',
   './index.html',
   './public/aura.html',
   './public/disenios.html',
+  './public/inicio.html',
   './public/reservar.html',
   './public/gracias.html',
   './manifest.json',
