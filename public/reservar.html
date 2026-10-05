@@ -354,17 +354,20 @@
       .step-heading p { margin: 7px 0 0; color: var(--muted); font-size: .82rem; line-height: 1.6; }
       .service-options {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 14px;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 10px;
       }
       .service-option {
         display: grid;
+        grid-template-columns: 88px minmax(0, 1fr);
+        align-items: stretch;
+        min-height: 92px;
         min-width: 0;
         overflow: hidden;
         padding: 0;
         margin: 0;
         border: 1px solid rgba(130,103,84,.18);
-        border-radius: 18px;
+        border-radius: 15px;
         background: rgba(255,255,255,.82);
         box-shadow: 0 8px 22px rgba(84,64,49,.05);
         color: #463831;
@@ -376,19 +379,22 @@
       .service-option__image, .service-option__placeholder {
         display: grid;
         width: 100%;
-        aspect-ratio: 16 / 10;
+        height: 88px;
+        min-height: 0;
+        align-self: center;
         place-items: center;
         background: linear-gradient(145deg, #f1e3d9, #f8f1e9);
         color: var(--rose);
-        font-size: 2rem;
+        font-size: 1.35rem;
         object-fit: cover;
       }
-      .service-option__body { display: grid; gap: 8px; padding: 15px; }
+      .service-option__body { display: grid; align-content: center; gap: 8px; min-width: 0; padding: 9px 12px; }
       .service-option__top { display: flex; align-items: start; justify-content: space-between; gap: 10px; }
+      .service-option__footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
       .service-option__name { margin: 0; color: #48362f; font-size: .9rem; font-weight: 800; line-height: 1.35; }
       .service-option__price { color: var(--rose); font-size: .88rem; font-weight: 800; white-space: nowrap; }
-      .service-option__meta { color: var(--muted); font-size: .72rem; }
-      .service-option__action { color: var(--rose); font-size: .72rem; font-weight: 800; }
+      .service-option__meta { color: var(--muted); font-size: .68rem; }
+      .service-option__action { color: var(--rose); font-size: .68rem; font-weight: 800; }
       .service-detail {
         overflow: hidden;
         border: 1px solid var(--line);
@@ -727,16 +733,19 @@
           price.textContent = precioFormato.format(Number(servicio.precio) || 0);
           top.append(name, price);
           body.appendChild(top);
+          const footer = document.createElement('span');
+          footer.className = 'service-option__footer';
           if (servicio.duracion) {
             const duration = document.createElement('span');
             duration.className = 'service-option__meta';
             duration.textContent = `Duración aprox. ${servicio.duracion}`;
-            body.appendChild(duration);
+            footer.appendChild(duration);
           }
           const action = document.createElement('span');
           action.className = 'service-option__action';
           action.textContent = 'Ver detalles →';
-          body.appendChild(action);
+          footer.appendChild(action);
+          body.appendChild(footer);
           button.appendChild(body);
           button.addEventListener('click', () => elegirServicio(servicio));
           serviceOptions.appendChild(button);
