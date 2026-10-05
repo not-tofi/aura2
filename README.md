@@ -61,15 +61,23 @@ Para habilitarlo en GitHub:
 
 1. Abrir **Settings > Pages** del repositorio.
 2. En **Build and deployment**, elegir **GitHub Actions** como origen.
-3. Subir los cambios a `main` y esperar a que termine el workflow **Deploy to GitHub Pages**.
+3. En **Custom domain**, configurar `auranails.shop` y guardar.
+  Con este workflow personalizado no hace falta un archivo `CNAME`; el dominio se configura en esta pantalla de Pages.
+4. En el proveedor DNS del dominio (Hostinger), verificar que existan estos registros y eliminar cualquier registro A antiguo que apunte a otro proveedor:
+  - A `@` -> `185.199.108.153`
+  - A `@` -> `185.199.109.153`
+  - A `@` -> `185.199.110.153`
+  - A `@` -> `185.199.111.153`
+  - CNAME `www` -> `not-tofi.github.io`
+5. Subir los cambios a `main` y esperar a que termine el workflow **Deploy to GitHub Pages**.
 
-Para este repositorio, la dirección del sitio será <https://not-tofi.github.io/aura2/>.
+La dirección principal del sitio será <https://auranails.shop/>. GitHub Pages puede tardar en detectar los cambios DNS y emitir el certificado HTTPS.
 
 ### Supabase en producción
 
 GitHub Pages sólo aloja archivos estáticos; Supabase sigue siendo necesario para las reservas y el acceso administrativo. En **Authentication > URL Configuration** de Supabase, configurar:
 
-- **Site URL:** `https://not-tofi.github.io/aura2/`
-- **Redirect URLs:** `https://not-tofi.github.io/aura2/**`
+- **Site URL:** `https://auranails.shop/`
+- **Redirect URLs:** `https://auranails.shop/**` y `https://www.auranails.shop/**`
 
 La clave `anon`/publishable usada por el navegador es pública. Nunca publicar una clave `service_role`; proteger los datos con Row Level Security (RLS) y políticas adecuadas en Supabase.

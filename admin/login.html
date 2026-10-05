@@ -102,7 +102,7 @@
     <script src="../assets/js/supabase-config.js"></script>
     <script>
       if ('serviceWorker' in navigator) {
-        const swUrl = window.location.hostname === 'localhost' ? '../sw.js' : '/aura2/sw.js';
+        const swUrl = window.location.hostname === 'localhost' ? '../sw.js' : '/sw.js';
         window.addEventListener('load', () => {
           navigator.serviceWorker.register(swUrl).catch(() => {});
         });
