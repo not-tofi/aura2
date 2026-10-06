@@ -1,7 +1,7 @@
 window.AURA_SUPABASE = {
   url: 'https://zukwzcavvgjiajyhkkys.supabase.co',
   anonKey: 'sb_publishable_8M1lC_xpnOzZyJ2qMWIwag_cA-aQAoT',
-  adminEmail: 'admin@aura-nails.local',
+  pushPublicKey: 'BKlHLBoA8E3UAZCqtxpvczWSs-8nHILMRmF-59Yp4y-ovzLumCK24x6MMlhFUC_raav70535fmuIwh8ml1Z7cvY',
   requiredRole: 'admin'
 };
 
@@ -30,11 +30,8 @@ window.AURA_SUPABASE.isAdminUser = function (user) {
   if (!user) return false;
 
   const role = String(user.app_metadata?.role || '').toLowerCase();
-  const email = String(user.email || '').toLowerCase();
-  const adminEmail = String(window.AURA_SUPABASE.adminEmail || '').toLowerCase();
 
-  return role === String(window.AURA_SUPABASE.requiredRole || 'admin').toLowerCase() ||
-    email === adminEmail;
+  return role === String(window.AURA_SUPABASE.requiredRole || 'admin').toLowerCase();
 };
 
 window.AURA_SUPABASE.ensureAdminAccess = async function () {

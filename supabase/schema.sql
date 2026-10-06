@@ -28,6 +28,7 @@ create table if not exists public.turnos (
   estado text not null default 'pendiente',
   forma_pago text,
   precio_pagado numeric,
+  push_subscription jsonb,
   created_at timestamptz not null default now()
 );
 
@@ -62,7 +63,8 @@ create table if not exists public.disenios (
 alter table public.turnos
   add column if not exists email text,
   add column if not exists forma_pago text,
-  add column if not exists precio_pagado numeric;
+  add column if not exists precio_pagado numeric,
+  add column if not exists push_subscription jsonb;
 
 DO $$
 BEGIN
@@ -83,6 +85,29 @@ BEGIN
       ADD CONSTRAINT turnos_precio_pagado_check
       CHECK (precio_pagado IS NULL OR precio_pagado >= 0);
   END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conrelid = 'public.turnos'::regclass AND conname = 'turnos_push_subscription_check'
+  ) THEN
+    ALTER TABLE public.turnos
+      ADD CONSTRAINT turnos_push_subscription_check
+      CHECK (
+        push_subscription IS NULL OR (
+          jsonb_typeof(push_subscription) = 'object' AND
+          push_subscription - 'endpoint' - 'keys' = '{}'::jsonb AND
+          push_subscription ? 'endpoint' AND
+          push_subscription ? 'keys' AND
+          jsonb_typeof(push_subscription -> 'endpoint') = 'string' AND
+          jsonb_typeof(push_subscription -> 'keys') = 'object' AND
+          (push_subscription -> 'keys') - 'p256dh' - 'auth' = '{}'::jsonb AND
+          coalesce(push_subscription ->> 'endpoint', '') ~ '^https://' AND
+          char_length(coalesce(push_subscription ->> 'endpoint', '')) BETWEEN 1 AND 2048 AND
+          char_length(coalesce(push_subscription -> 'keys' ->> 'p256dh', '')) BETWEEN 1 AND 256 AND
+          char_length(coalesce(push_subscription -> 'keys' ->> 'auth', '')) BETWEEN 1 AND 256
+        )
+      );
+  END IF;
 END $$;
 
 create index if not exists turnos_fecha_idx on public.turnos (fecha);
@@ -94,39 +119,78 @@ alter table public.clientes enable row level security;
 alter table public.redes_sociales enable row level security;
 alter table public.disenios enable row level security;
 
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SET search_path = ''
+AS $$
+  SELECT lower(coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '')) = 'admin';
+$$;
+
+REVOKE ALL ON FUNCTION public.is_admin() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated;
+
+REVOKE ALL ON public.tipos, public.turnos, public.clientes, public.redes_sociales, public.disenios
+  FROM PUBLIC, anon, authenticated;
+GRANT SELECT ON public.tipos, public.redes_sociales, public.disenios TO anon, authenticated;
+GRANT INSERT, UPDATE ON public.tipos TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.clientes TO authenticated;
-GRANT USAGE, SELECT ON SEQUENCE public.clientes_id_seq TO authenticated;
-GRANT DELETE ON public.turnos TO authenticated;
-GRANT SELECT ON public.redes_sociales, public.disenios TO anon, authenticated;
 GRANT INSERT, UPDATE, DELETE ON public.redes_sociales, public.disenios TO authenticated;
-GRANT USAGE, SELECT ON SEQUENCE public.redes_sociales_id_seq, public.disenios_id_seq TO authenticated;
+GRANT SELECT, UPDATE, DELETE ON public.turnos TO authenticated;
+REVOKE INSERT (
+  id, nombre, email, telefono, tipo_id, fecha, hora, notas, estado,
+  forma_pago, precio_pagado, push_subscription, created_at
+) ON public.turnos FROM PUBLIC, anon, authenticated;
+REVOKE UPDATE (
+  id, nombre, email, telefono, tipo_id, fecha, hora, notas, estado,
+  forma_pago, precio_pagado, push_subscription, created_at
+) ON public.turnos FROM PUBLIC, anon, authenticated;
+GRANT INSERT (nombre, email, telefono, tipo_id, fecha, hora, notas, estado, push_subscription)
+  ON public.turnos TO anon, authenticated;
+REVOKE ALL ON SEQUENCE public.tipos_id_seq, public.clientes_id_seq,
+  public.redes_sociales_id_seq, public.disenios_id_seq FROM PUBLIC, anon, authenticated;
+GRANT USAGE, SELECT ON SEQUENCE public.tipos_id_seq, public.clientes_id_seq,
+  public.redes_sociales_id_seq, public.disenios_id_seq TO authenticated;
+
+DO $$
+DECLARE
+  existing_policy record;
+BEGIN
+  FOR existing_policy IN
+    SELECT schemaname, tablename, policyname
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename IN ('tipos', 'turnos', 'clientes', 'redes_sociales', 'disenios')
+  LOOP
+    EXECUTE format(
+      'DROP POLICY %I ON %I.%I',
+      existing_policy.policyname,
+      existing_policy.schemaname,
+      existing_policy.tablename
+    );
+  END LOOP;
+END $$;
 
 DO $$
 BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'tipos' AND policyname = 'tipos_read'
-  ) THEN
-    CREATE POLICY "tipos_read" ON public.tipos FOR SELECT USING (true);
-  END IF;
+  CREATE POLICY "tipos_read" ON public.tipos FOR SELECT USING (true);
 
   DROP POLICY IF EXISTS "tipos_insert_admin" ON public.tipos;
   CREATE POLICY "tipos_insert_admin" ON public.tipos FOR INSERT WITH CHECK (
     auth.uid() IS NOT NULL AND (
-      lower(coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '')) = 'admin' OR
-      lower(coalesce(auth.email(), '')) = 'admin@aura-nails.local'
+      public.is_admin()
     )
   );
 
   DROP POLICY IF EXISTS "tipos_update_admin" ON public.tipos;
   CREATE POLICY "tipos_update_admin" ON public.tipos FOR UPDATE USING (
     auth.uid() IS NOT NULL AND (
-      lower(coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '')) = 'admin' OR
-      lower(coalesce(auth.email(), '')) = 'admin@aura-nails.local'
+      public.is_admin()
     )
   ) WITH CHECK (
     auth.uid() IS NOT NULL AND (
-      lower(coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '')) = 'admin' OR
-      lower(coalesce(auth.email(), '')) = 'admin@aura-nails.local'
+      public.is_admin()
     )
   );
 
@@ -145,8 +209,7 @@ BEGIN
   CREATE POLICY "servicios_admin_insert" ON storage.objects FOR INSERT
     WITH CHECK (
       bucket_id = 'servicios' AND auth.uid() IS NOT NULL AND (
-        lower(coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '')) = 'admin' OR
-        lower(coalesce(auth.email(), '')) = 'admin@aura-nails.local'
+        public.is_admin()
       )
     );
 
@@ -154,8 +217,7 @@ BEGIN
   CREATE POLICY "servicios_admin_delete" ON storage.objects FOR DELETE
     USING (
       bucket_id = 'servicios' AND auth.uid() IS NOT NULL AND (
-        lower(coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '')) = 'admin' OR
-        lower(coalesce(auth.email(), '')) = 'admin@aura-nails.local'
+        public.is_admin()
       )
     );
 
@@ -167,8 +229,7 @@ BEGIN
   CREATE POLICY "redes_sociales_admin_insert" ON public.redes_sociales
     FOR INSERT WITH CHECK (
       auth.uid() IS NOT NULL AND (
-        lower(coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '')) = 'admin' OR
-        lower(coalesce(auth.email(), '')) = 'admin@aura-nails.local'
+        public.is_admin()
       )
     );
 
@@ -176,13 +237,11 @@ BEGIN
   CREATE POLICY "redes_sociales_admin_update" ON public.redes_sociales
     FOR UPDATE USING (
       auth.uid() IS NOT NULL AND (
-        lower(coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '')) = 'admin' OR
-        lower(coalesce(auth.email(), '')) = 'admin@aura-nails.local'
+        public.is_admin()
       )
     ) WITH CHECK (
       auth.uid() IS NOT NULL AND (
-        lower(coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '')) = 'admin' OR
-        lower(coalesce(auth.email(), '')) = 'admin@aura-nails.local'
+        public.is_admin()
       )
     );
 
@@ -190,8 +249,7 @@ BEGIN
   CREATE POLICY "redes_sociales_admin_delete" ON public.redes_sociales
     FOR DELETE USING (
       auth.uid() IS NOT NULL AND (
-        lower(coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '')) = 'admin' OR
-        lower(coalesce(auth.email(), '')) = 'admin@aura-nails.local'
+        public.is_admin()
       )
     );
 
@@ -203,8 +261,7 @@ BEGIN
   CREATE POLICY "disenios_admin_insert" ON public.disenios
     FOR INSERT WITH CHECK (
       auth.uid() IS NOT NULL AND (
-        lower(coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '')) = 'admin' OR
-        lower(coalesce(auth.email(), '')) = 'admin@aura-nails.local'
+        public.is_admin()
       )
     );
 
@@ -212,13 +269,11 @@ BEGIN
   CREATE POLICY "disenios_admin_update" ON public.disenios
     FOR UPDATE USING (
       auth.uid() IS NOT NULL AND (
-        lower(coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '')) = 'admin' OR
-        lower(coalesce(auth.email(), '')) = 'admin@aura-nails.local'
+        public.is_admin()
       )
     ) WITH CHECK (
       auth.uid() IS NOT NULL AND (
-        lower(coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '')) = 'admin' OR
-        lower(coalesce(auth.email(), '')) = 'admin@aura-nails.local'
+        public.is_admin()
       )
     );
 
@@ -226,8 +281,7 @@ BEGIN
   CREATE POLICY "disenios_admin_delete" ON public.disenios
     FOR DELETE USING (
       auth.uid() IS NOT NULL AND (
-        lower(coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '')) = 'admin' OR
-        lower(coalesce(auth.email(), '')) = 'admin@aura-nails.local'
+        public.is_admin()
       )
     );
 
@@ -246,8 +300,7 @@ BEGIN
   CREATE POLICY "disenios_admin_storage_insert" ON storage.objects FOR INSERT
     WITH CHECK (
       bucket_id = 'disenios' AND auth.uid() IS NOT NULL AND (
-        lower(coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '')) = 'admin' OR
-        lower(coalesce(auth.email(), '')) = 'admin@aura-nails.local'
+        public.is_admin()
       )
     );
 
@@ -255,16 +308,14 @@ BEGIN
   CREATE POLICY "disenios_admin_storage_delete" ON storage.objects FOR DELETE
     USING (
       bucket_id = 'disenios' AND auth.uid() IS NOT NULL AND (
-        lower(coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '')) = 'admin' OR
-        lower(coalesce(auth.email(), '')) = 'admin@aura-nails.local'
+        public.is_admin()
       )
     );
 
   DROP POLICY IF EXISTS "turnos_read" ON public.turnos;
   CREATE POLICY "turnos_read" ON public.turnos FOR SELECT USING (
     auth.uid() IS NOT NULL AND (
-      lower(coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '')) = 'admin' OR
-      lower(coalesce(auth.email(), '')) = 'admin@aura-nails.local'
+      public.is_admin()
     )
   );
 
@@ -273,64 +324,57 @@ BEGIN
     nombre IS NOT NULL AND btrim(nombre) <> '' AND
     email IS NOT NULL AND btrim(email) <> '' AND
     telefono IS NOT NULL AND btrim(telefono) <> '' AND
-    fecha IS NOT NULL AND hora IS NOT NULL AND hora <> ''
+    fecha IS NOT NULL AND hora IS NOT NULL AND hora <> '' AND
+    estado = 'pendiente' AND forma_pago IS NULL AND precio_pagado IS NULL
   );
 
   DROP POLICY IF EXISTS "turnos_update_admin" ON public.turnos;
   CREATE POLICY "turnos_update_admin" ON public.turnos FOR UPDATE USING (
     auth.uid() IS NOT NULL AND (
-      lower(coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '')) = 'admin' OR
-      lower(coalesce(auth.email(), '')) = 'admin@aura-nails.local'
+      public.is_admin()
     )
   ) WITH CHECK (
     auth.uid() IS NOT NULL AND (
-      lower(coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '')) = 'admin' OR
-      lower(coalesce(auth.email(), '')) = 'admin@aura-nails.local'
+      public.is_admin()
     )
   );
 
   DROP POLICY IF EXISTS "turnos_delete_admin" ON public.turnos;
   CREATE POLICY "turnos_delete_admin" ON public.turnos FOR DELETE USING (
     auth.uid() IS NOT NULL AND (
-      lower(coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '')) = 'admin' OR
-      lower(coalesce(auth.email(), '')) = 'admin@aura-nails.local'
+      public.is_admin()
     )
   );
 
   DROP POLICY IF EXISTS "clientes_select_admin" ON public.clientes;
   CREATE POLICY "clientes_select_admin" ON public.clientes FOR SELECT USING (
     auth.uid() IS NOT NULL AND (
-      lower(coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '')) = 'admin' OR
-      lower(coalesce(auth.email(), '')) = 'admin@aura-nails.local'
+      public.is_admin()
     )
   );
 
   DROP POLICY IF EXISTS "clientes_insert_admin" ON public.clientes;
   CREATE POLICY "clientes_insert_admin" ON public.clientes FOR INSERT WITH CHECK (
     auth.uid() IS NOT NULL AND (
-      lower(coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '')) = 'admin' OR
-      lower(coalesce(auth.email(), '')) = 'admin@aura-nails.local'
+      public.is_admin()
     )
   );
 
   DROP POLICY IF EXISTS "clientes_update_admin" ON public.clientes;
   CREATE POLICY "clientes_update_admin" ON public.clientes FOR UPDATE USING (
     auth.uid() IS NOT NULL AND (
-      lower(coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '')) = 'admin' OR
-      lower(coalesce(auth.email(), '')) = 'admin@aura-nails.local'
+      public.is_admin()
     )
   ) WITH CHECK (
     auth.uid() IS NOT NULL AND (
-      lower(coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '')) = 'admin' OR
-      lower(coalesce(auth.email(), '')) = 'admin@aura-nails.local'
+      public.is_admin()
     )
   );
 
   DROP POLICY IF EXISTS "clientes_delete_admin" ON public.clientes;
   CREATE POLICY "clientes_delete_admin" ON public.clientes FOR DELETE USING (
     auth.uid() IS NOT NULL AND (
-      lower(coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '')) = 'admin' OR
-      lower(coalesce(auth.email(), '')) = 'admin@aura-nails.local'
+      public.is_admin()
     )
   );
 END $$;

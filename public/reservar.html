@@ -186,6 +186,29 @@
         font-size: .73rem;
         line-height: 1.6;
       }
+      .push-consent {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin: 16px 0 8px;
+        color: #625149;
+        font-size: .76rem;
+        font-weight: 600;
+        line-height: 1.55;
+      }
+      .push-consent input[type="checkbox"] {
+        width: 18px;
+        min-width: 18px;
+        min-height: 18px;
+        margin: 1px 0 0;
+        accent-color: var(--rose);
+      }
+      .push-notice {
+        margin: 0 0 12px;
+        color: var(--muted);
+        font-size: .72rem;
+        line-height: 1.5;
+      }
       .booking-summary {
         position: sticky;
         top: 24px;
@@ -589,6 +612,11 @@
                     <textarea id="notas" name="notas" rows="3" placeholder="Dejanos una nota sobre tu idea o diseño"></textarea>
                   </div>
                 </div>
+                <label class="push-consent" for="pushConsent">
+                  <input id="pushConsent" type="checkbox" />
+                  <span>Quiero recibir una notificación en este dispositivo cuando Aura Nails confirme mi turno.</span>
+                </label>
+                <p id="pushNotice" class="push-notice" aria-live="polite"></p>
                 <p class="form-note">La seña y cualquier detalle del servicio se coordinan con Aura Nails Studio.</p>
                 <p id="error" class="error" role="alert" aria-live="polite"></p>
                 <div class="step-actions">
@@ -635,6 +663,57 @@
       });
       const form = document.getElementById('formTurno');
       const errorBox = document.getElementById('error');
+      const pushConsent = document.getElementById('pushConsent');
+      const pushNotice = document.getElementById('pushNotice');
+      const pushPublicKey = window.AURA_SUPABASE?.pushPublicKey || '';
+      const supportsPush = window.isSecureContext &&
+        'serviceWorker' in navigator &&
+        'PushManager' in window &&
+        'Notification' in window;
+      if (!supportsPush || !pushPublicKey || pushPublicKey.startsWith('YOUR_')) {
+        pushConsent.disabled = true;
+        pushNotice.textContent = supportsPush
+          ? 'Las notificaciones todavía no están configuradas. Podés reservar igualmente.'
+          : 'Este navegador o conexión no admite notificaciones web seguras. Podés reservar igualmente.';
+      } else if (Notification.permission === 'denied') {
+        pushConsent.disabled = true;
+        pushNotice.textContent = 'Las notificaciones están bloqueadas en el navegador. Podés reservar igualmente.';
+      }
+
+      function decodePushKey(value) {
+        const encoded = value.replace(/-/g, '+').replace(/_/g, '/');
+        const base64 = encoded + '='.repeat((4 - encoded.length % 4) % 4);
+        const raw = atob(base64);
+        return Uint8Array.from(raw, (character) => character.charCodeAt(0));
+      }
+
+      async function crearSuscripcionPush() {
+        if (!supportsPush || !pushPublicKey) return null;
+
+        let permission = Notification.permission;
+        if (permission === 'default') permission = await Notification.requestPermission();
+        if (permission !== 'granted') return null;
+
+        await navigator.serviceWorker.register('../sw.js');
+        const activeRegistration = await navigator.serviceWorker.ready;
+        let subscription = await activeRegistration.pushManager.getSubscription();
+        if (!subscription) {
+          subscription = await activeRegistration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: decodePushKey(pushPublicKey)
+          });
+        }
+        return subscription.toJSON();
+      }
+
+      pushConsent.addEventListener('change', () => {
+        if (pushConsent.checked) {
+          pushNotice.textContent = 'Al enviar la reserva, el navegador te pedirá permiso para mostrar el aviso.';
+        } else if (pushConsent.disabled === false) {
+          pushNotice.textContent = '';
+        }
+      });
+
       const serviceOptions = document.getElementById('serviceOptions');
       const serviceDetail = document.getElementById('serviceDetail');
       const dateOptions = document.getElementById('dateOptions');
@@ -934,6 +1013,20 @@
         submitBooking.disabled = true;
         submitBooking.textContent = 'Enviando reserva…';
         try {
+          let pushSubscription = null;
+          if (pushConsent.checked) {
+            try {
+              pushSubscription = await crearSuscripcionPush();
+              if (!pushSubscription) {
+                pushNotice.textContent = 'El turno se enviará igualmente, pero este dispositivo no recibirá el aviso de confirmación.';
+              }
+            } catch (pushError) {
+              console.warn('No se pudo activar la notificación web:', pushError);
+              pushNotice.textContent = 'El turno se enviará igualmente, pero no se pudo activar el aviso en este dispositivo.';
+            }
+          }
+
+          payload.push_subscription = pushSubscription;
           const { error } = await window.auraSupabase.from('turnos').insert([payload]);
           if (error) throw error;
           window.location.href = './gracias.html';

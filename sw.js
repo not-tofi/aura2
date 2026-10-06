@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aura-nails-v8';
+const CACHE_NAME = 'aura-nails-v9';
 const ASSETS = [
   './',
   './index.html',
@@ -32,6 +32,36 @@ self.addEventListener('activate', (event) => {
     )
   );
   self.clients.claim();
+});
+
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+
+  const notification = event.data.json();
+  event.waitUntil(
+    self.registration.showNotification(notification.title, {
+      body: notification.body,
+      icon: './assets/img/aura-icon.png',
+      data: { url: notification.url || './' }
+    })
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const target = new URL(event.notification.data?.url || './', self.location.origin);
+  if (target.origin !== self.location.origin) return;
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+      const existingClient = clients.find((client) => 'focus' in client);
+      if (existingClient) {
+        existingClient.navigate(target.href);
+        return existingClient.focus();
+      }
+      return self.clients.openWindow(target.href);
+    })
+  );
 });
 
 self.addEventListener('fetch', (event) => {

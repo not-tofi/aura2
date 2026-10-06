@@ -303,7 +303,7 @@
 
         const { data, error } = await client
           .from('turnos')
-          .select('*, tipos (id, nombre, precio)')
+          .select('id, nombre, email, telefono, fecha, hora, notas, estado, forma_pago, precio_pagado, tipos (id, nombre, precio)')
           .neq('estado', 'realizado')
           .order('fecha', { ascending: true })
           .order('hora', { ascending: true });
@@ -366,8 +366,31 @@
           if (!data) throw new Error('No se encontró el turno actualizado. Verificá que tu sesión de administrador siga activa.');
 
           const turno = turnos.find((item) => item.id === id);
+          const estadoAnterior = turno?.estado;
           if (turno) turno.estado = data.estado;
-          mensajesPorTurno.set(id, { kind: 'success', text: `Estado actualizado: ${nombreEstado[estado]}.` });
+          let mensaje = `Estado actualizado: ${nombreEstado[estado]}.`;
+          if (estado === 'confirmado' && estadoAnterior !== 'confirmado') {
+            try {
+              const { data: resultado, error: notificationError } = await client.functions.invoke(
+                'send-turno-confirmation',
+                { body: { turnoId: id } }
+              );
+              if (notificationError) throw notificationError;
+              if (resultado?.sent) {
+                mensaje += ' Se envió la notificación al cliente.';
+              } else if (resultado?.reason === 'no_subscription') {
+                mensaje += ' El cliente no activó las notificaciones web.';
+              } else if (resultado?.reason === 'subscription_expired') {
+                mensaje += ' El permiso de notificación del cliente venció; deberá activarlo nuevamente.';
+              } else {
+                throw new Error('La función no confirmó el envío de la notificación.');
+              }
+            } catch (notificationError) {
+              console.error('No se pudo enviar la notificación de confirmación:', notificationError);
+              mensaje += ' No se pudo enviar el aviso web; revisá la configuración de notificaciones.';
+            }
+          }
+          mensajesPorTurno.set(id, { kind: 'success', text: mensaje });
           actualizarResumenTurnos();
           renderTurnos();
         } catch (error) {

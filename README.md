@@ -14,6 +14,7 @@
 - `admin/*.html`: panel administrativo, con gestión de servicios en `admin/servicios.html`.
 - `supabase/schema.sql`: esquema de base de datos para Supabase.
 - `assets/js/supabase-config.js`: configuración base para Supabase.
+- `supabase/functions/send-turno-confirmation/index.ts`: envío seguro de confirmaciones web push.
 
 ## Configuración de Supabase
 
@@ -31,12 +32,12 @@ window.AURA_SUPABASE = {
 
 5. Ejecutar el SQL de `supabase/schema.sql` en el SQL editor de Supabase.
 
-Si el proyecto ya tenía las tablas y políticas creadas, volvé a ejecutar `supabase/schema.sql` para actualizar las políticas, agregar a los servicios descripción, duración e imagen demostrativa, permitir guardar el correo en las reservas, crear los buckets públicos de imágenes `servicios` y `disenios`, crear las tablas `redes_sociales` y `disenios`, agregar a los turnos los campos de forma de pago y precio pagado, crear la tabla privada de fichas de clientes y habilitar el borrado administrativo de turnos. El SQL puede ejecutarse nuevamente para aplicar las tablas, buckets y políticas faltantes. La reserva pública consulta los horarios ocupados mediante una función que no expone los datos personales del resto de las clientas. Los paneles de Servicios y Diseños permiten cargar JPG, PNG o WebP de hasta 5 MB. Las redes guardadas desde Administración aparecen en la página Aura; los diseños publicados se muestran en la galería pública. La página Clientes solo mostrará las fichas agregadas manualmente por el administrador; reservar un turno no crea una ficha ni borrar una ficha elimina turnos. Desde Historial se pueden borrar turnos seleccionados (con confirmación); la economía mensual calcula ingresos solo con el precio pagado guardado al finalizar cada atención.
+Si el proyecto ya tenía las tablas y políticas creadas, volvé a ejecutar `supabase/schema.sql` para actualizar las políticas y permisos, agregar a los servicios descripción, duración e imagen demostrativa, permitir guardar el correo y la suscripción push opcional en las reservas, crear los buckets públicos de imágenes `servicios` y `disenios`, crear las tablas `redes_sociales` y `disenios`, agregar a los turnos los campos de forma de pago y precio pagado, crear la tabla privada de fichas de clientes y habilitar el borrado administrativo de turnos. El SQL reemplaza las políticas RLS existentes de esas cinco tablas públicas por las definidas en el archivo; revisar y respaldar cualquier política personalizada antes de ejecutarlo. Las reservas públicas sólo pueden crear turnos pendientes y no pueden registrar pagos ni leer datos personales; los cambios administrativos requieren el claim `app_metadata.role = admin`. La reserva pública consulta los horarios ocupados mediante una función que no expone los datos personales del resto de las clientas. Los paneles de Servicios y Diseños permiten cargar JPG, PNG o WebP de hasta 5 MB. Las redes guardadas desde Administración aparecen en la página Aura; los diseños publicados se muestran en la galería pública. La página Clientes solo mostrará las fichas agregadas manualmente por el administrador; reservar un turno no crea una ficha ni borrar una ficha elimina turnos. Desde Historial se pueden borrar turnos seleccionados (con confirmación); la economía mensual calcula ingresos solo con el precio pagado guardado al finalizar cada atención.
 
 ## Login admin por correo electrónico
 
 1. En Supabase, abrir **Authentication > Users** y crear/invitar al usuario administrador con su correo y contraseña.
-2. Si el correo del usuario no es `admin@aura-nails.local`, asignarle el rol desde **SQL Editor**, reemplazando el correo por el usado para iniciar sesión:
+2. Asignarle el rol desde **SQL Editor**, reemplazando el correo por el usado para iniciar sesión:
 
 ```sql
 update auth.users
@@ -44,7 +45,7 @@ set raw_app_meta_data = coalesce(raw_app_meta_data, '{}'::jsonb) || '{"role":"ad
 where lower(email) = lower('TU_CORREO');
 ```
 
-3. Cerrar sesión y volver a ingresar desde `admin/login.html` con ese correo y contraseña. Si se acaba de asignar el rol, volver a iniciar sesión para que la nueva sesión lo incluya.
+3. Cerrar sesión y volver a ingresar desde `admin/login.html` con ese correo y contraseña para que la nueva sesión incluya el claim del rol.
 
 No asignar el rol desde `user_metadata` ni desde el navegador; usá `app_metadata` como en la consulta anterior.
 
@@ -85,5 +86,33 @@ GitHub Pages sólo aloja archivos estáticos; Supabase sigue siendo necesario pa
 
 - **Site URL:** `https://auranails.shop/`
 - **Redirect URLs:** `https://auranails.shop/**` y `https://www.auranails.shop/**`
+
+### Notificaciones de confirmación
+
+Las notificaciones son opcionales. En la reserva, la persona puede aceptar recibir un aviso en ese dispositivo; el navegador también debe conceder permiso. Si no acepta o el navegador no lo admite, la reserva se procesa normalmente, pero no se envía el aviso. Al pasar el estado de pendiente a confirmado, el panel invoca una Edge Function que valida la sesión y el rol del administrador, consulta la reserva en el servidor y envía el push. La clave privada VAPID y la clave `service_role` nunca deben agregarse al sitio ni al repositorio.
+
+1. Ejecutar nuevamente `supabase/schema.sql` en el SQL Editor para instalar las restricciones, permisos mínimos y el campo privado de suscripción.
+2. Generar un par VAPID desde una terminal con `npx --yes web-push generate-vapid-keys --json`. Copiar la clave `publicKey` a `pushPublicKey` en `assets/js/supabase-config.js`; esta clave es pública.
+3. Instalar y autenticar [Supabase CLI](https://supabase.com/docs/guides/cli), y vincularlo con el proyecto (el `project-ref` está en la URL de Supabase):
+
+```powershell
+supabase link --project-ref TU_PROJECT_REF
+```
+
+4. Guardar las claves VAPID como secretos de funciones, reemplazando los valores por los generados:
+
+```powershell
+supabase secrets set AURA_VAPID_PUBLIC_KEY="CLAVE_PUBLICA" AURA_VAPID_PRIVATE_KEY="CLAVE_PRIVADA" AURA_VAPID_SUBJECT="mailto:admin@auranails.shop"
+```
+
+5. Publicar la Edge Function:
+
+```powershell
+supabase functions deploy send-turno-confirmation
+```
+
+6. Publicar el sitio actualizado. La autorización de la función y las políticas RLS requieren una sesión Supabase válida con el rol `admin` de `app_metadata`.
+
+No guardar la clave privada VAPID, `SUPABASE_SERVICE_ROLE_KEY` ni ninguna clave secreta en `assets/js/supabase-config.js`. La clave pública VAPID sí debe estar configurada en el sitio y debe corresponder al par privado guardado en Supabase.
 
 La clave `anon`/publishable usada por el navegador es pública. Nunca publicar una clave `service_role`; proteger los datos con Row Level Security (RLS) y políticas adecuadas en Supabase.
