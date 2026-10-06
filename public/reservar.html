@@ -696,11 +696,22 @@
 
         await navigator.serviceWorker.register('../sw.js');
         const activeRegistration = await navigator.serviceWorker.ready;
+        const applicationServerKey = decodePushKey(pushPublicKey);
         let subscription = await activeRegistration.pushManager.getSubscription();
+        if (subscription) {
+          const currentKey = subscription.options.applicationServerKey;
+          const keyMatches = currentKey &&
+            currentKey.byteLength === applicationServerKey.byteLength &&
+            applicationServerKey.every((byte, index) => byte === currentKey[index]);
+          if (!keyMatches) {
+            await subscription.unsubscribe();
+            subscription = null;
+          }
+        }
         if (!subscription) {
           subscription = await activeRegistration.pushManager.subscribe({
             userVisibleOnly: true,
-            applicationServerKey: decodePushKey(pushPublicKey)
+            applicationServerKey
           });
         }
         return subscription.toJSON();
