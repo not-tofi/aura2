@@ -86,28 +86,31 @@ BEGIN
       CHECK (precio_pagado IS NULL OR precio_pagado >= 0);
   END IF;
 
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conrelid = 'public.turnos'::regclass AND conname = 'turnos_push_subscription_check'
-  ) THEN
-    ALTER TABLE public.turnos
-      ADD CONSTRAINT turnos_push_subscription_check
-      CHECK (
-        push_subscription IS NULL OR (
-          jsonb_typeof(push_subscription) = 'object' AND
-          push_subscription - 'endpoint' - 'keys' = '{}'::jsonb AND
-          push_subscription ? 'endpoint' AND
-          push_subscription ? 'keys' AND
-          jsonb_typeof(push_subscription -> 'endpoint') = 'string' AND
-          jsonb_typeof(push_subscription -> 'keys') = 'object' AND
-          (push_subscription -> 'keys') - 'p256dh' - 'auth' = '{}'::jsonb AND
-          coalesce(push_subscription ->> 'endpoint', '') ~ '^https://' AND
-          char_length(coalesce(push_subscription ->> 'endpoint', '')) BETWEEN 1 AND 2048 AND
-          char_length(coalesce(push_subscription -> 'keys' ->> 'p256dh', '')) BETWEEN 1 AND 256 AND
-          char_length(coalesce(push_subscription -> 'keys' ->> 'auth', '')) BETWEEN 1 AND 256
-        )
-      );
-  END IF;
+  ALTER TABLE public.turnos
+    DROP CONSTRAINT IF EXISTS turnos_push_subscription_check;
+  ALTER TABLE public.turnos
+    ADD CONSTRAINT turnos_push_subscription_check
+    CHECK (
+      push_subscription IS NULL OR (
+        jsonb_typeof(push_subscription) = 'object' AND
+        push_subscription - 'endpoint' - 'keys' - 'expirationTime' = '{}'::jsonb AND
+        push_subscription ? 'endpoint' AND
+        push_subscription ? 'keys' AND
+        (
+          NOT (push_subscription ? 'expirationTime') OR
+          jsonb_typeof(push_subscription -> 'expirationTime') IN ('null', 'number')
+        ) AND
+        jsonb_typeof(push_subscription -> 'endpoint') = 'string' AND
+        jsonb_typeof(push_subscription -> 'keys') = 'object' AND
+        (push_subscription -> 'keys') - 'p256dh' - 'auth' = '{}'::jsonb AND
+        jsonb_typeof(push_subscription -> 'keys' -> 'p256dh') = 'string' AND
+        jsonb_typeof(push_subscription -> 'keys' -> 'auth') = 'string' AND
+        coalesce(push_subscription ->> 'endpoint', '') ~ '^https://' AND
+        char_length(coalesce(push_subscription ->> 'endpoint', '')) BETWEEN 1 AND 2048 AND
+        char_length(coalesce(push_subscription -> 'keys' ->> 'p256dh', '')) BETWEEN 1 AND 256 AND
+        char_length(coalesce(push_subscription -> 'keys' ->> 'auth', '')) BETWEEN 1 AND 256
+      )
+    );
 END $$;
 
 create index if not exists turnos_fecha_idx on public.turnos (fecha);
@@ -152,6 +155,8 @@ REVOKE ALL ON SEQUENCE public.tipos_id_seq, public.clientes_id_seq,
   public.redes_sociales_id_seq, public.disenios_id_seq FROM PUBLIC, anon, authenticated;
 GRANT USAGE, SELECT ON SEQUENCE public.tipos_id_seq, public.clientes_id_seq,
   public.redes_sociales_id_seq, public.disenios_id_seq TO authenticated;
+REVOKE ALL ON SEQUENCE public.turnos_id_seq FROM PUBLIC, anon, authenticated;
+GRANT USAGE ON SEQUENCE public.turnos_id_seq TO anon, authenticated;
 
 DO $$
 DECLARE
