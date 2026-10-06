@@ -1,7 +1,7 @@
 window.AURA_SUPABASE = {
   url: 'https://zukwzcavvgjiajyhkkys.supabase.co',
   anonKey: 'sb_publishable_8M1lC_xpnOzZyJ2qMWIwag_cA-aQAoT',
-  pushPublicKey: 'BKlHLBoA8E3UAZCqtxpvczWSs-8nHILMRmF-59Yp4y-ovzLumCK24x6MMlhFUC_raav70535fmuIwh8ml1Z7cvY',
+  pushPublicKey: 'BIlbp9rpPJ-00hkKpmteuCZ3NBJI1qRScsnqiVxYHG99YeMHysuM2-OpgQE-y4kqJ507SJlW5R0W3F0mA3nlICQ',
   requiredRole: 'admin'
 };
 
