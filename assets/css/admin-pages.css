@@ -403,6 +403,127 @@
   object-fit: cover;
 }
 
+.service-management-card {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr);
+  align-items: stretch;
+  gap: 15px;
+  padding: 10px;
+}
+
+.service-management-card__visual {
+  display: grid;
+  min-height: 96px;
+  overflow: hidden;
+  place-items: center;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #f1e3d9, #f8f1e9);
+}
+
+.service-management-card__image {
+  width: 100%;
+  height: 100%;
+  min-height: 96px;
+  object-fit: cover;
+}
+
+.service-management-card__placeholder {
+  color: var(--primary);
+  font-size: 1.6rem;
+}
+
+.service-management-card__content {
+  display: grid;
+  min-width: 0;
+  align-content: center;
+  gap: 8px;
+  padding: 5px 7px 5px 0;
+}
+
+.service-management-card .management-card__meta { margin-top: 0; }
+.service-management-card .management-card__description { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+
+.appointment-create {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 22px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(231, 212, 202, .9);
+}
+
+.appointment-create__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.appointment-create__heading h2 {
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.appointment-create__heading p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: .72rem;
+  line-height: 1.5;
+}
+
+.appointment-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgba(231, 212, 202, .82);
+  border-radius: 16px;
+  background: #fffdfa;
+}
+
+.appointment-form[hidden] { display: none; }
+
+.appointment-form label {
+  display: grid;
+  min-width: 0;
+  gap: 7px;
+  color: var(--muted);
+  font-size: .7rem;
+  font-weight: 800;
+}
+
+.appointment-form label span { font-weight: 500; }
+
+.appointment-form input,
+.appointment-form select,
+.appointment-form textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 13px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  outline: none;
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+  font-size: .78rem;
+}
+
+.appointment-form input:focus,
+.appointment-form select:focus,
+.appointment-form textarea:focus {
+  border-color: rgba(167, 119, 105, .7);
+  box-shadow: 0 0 0 4px rgba(167, 119, 105, .11);
+}
+
+.appointment-form textarea { min-height: 72px; resize: vertical; }
+.appointment-form__wide,
+.appointment-form__message { grid-column: 1 / -1; }
+.appointment-form__message { min-height: 1em; margin: 0; color: var(--success); font-size: .73rem; }
+.appointment-form__message[data-kind="error"] { color: var(--danger); }
+.appointment-form .management-button { width: 100%; }
+
 .management-avatar {
   display: grid;
   width: 42px;
@@ -883,6 +1004,7 @@ body.client-drawer-open .btn-opciones { visibility: hidden; }
   .service-form { grid-template-columns: 1fr 1fr; }
   .service-form.is-editing { grid-template-columns: 1fr 1fr; }
   .service-form button { grid-column: 1 / -1; }
+  .appointment-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 390px) {
@@ -894,6 +1016,14 @@ body.client-drawer-open .btn-opciones { visibility: hidden; }
   .service-form.is-editing { grid-template-columns: 1fr; }
   .service-form__wide,
   .service-form button { grid-column: auto; }
+  .service-management-card { grid-template-columns: 76px minmax(0, 1fr); gap: 10px; }
+  .service-management-card__visual,
+  .service-management-card__image { min-height: 82px; }
+  .appointment-create__heading { align-items: flex-start; flex-direction: column; }
+  .appointment-create__heading .management-button { width: 100%; }
+  .appointment-form { grid-template-columns: 1fr; }
+  .appointment-form__wide,
+  .appointment-form__message { grid-column: auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {

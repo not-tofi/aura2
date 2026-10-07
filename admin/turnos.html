@@ -48,6 +48,44 @@
             <article class="management-stat"><span>Confirmados</span><strong id="confirmedTotal">—</strong></article>
           </section>
           <section class="management-panel" aria-label="Administrar turnos">
+            <div class="appointment-create">
+              <div class="appointment-create__heading">
+                <div>
+                  <h2>Agregar turno manual</h2>
+                  <p>Reservá un horario directamente desde la agenda. Se guardará como confirmado.</p>
+                </div>
+                <button class="management-button" id="toggleAppointmentForm" type="button" aria-expanded="false" aria-controls="appointmentFormPanel">Crear turno <span aria-hidden="true">+</span></button>
+              </div>
+              <form class="appointment-form" id="appointmentFormPanel" hidden>
+                <label>Servicio
+                  <select id="manualService" required>
+                    <option value="">Cargando servicios…</option>
+                  </select>
+                </label>
+                <label>Fecha
+                  <input id="manualDate" type="date" required />
+                </label>
+                <label>Horario
+                  <select id="manualTime" required>
+                    <option value="">Elegí una fecha primero</option>
+                  </select>
+                </label>
+                <label>Nombre y apellido
+                  <input id="manualName" type="text" maxlength="120" autocomplete="name" required />
+                </label>
+                <label>Teléfono
+                  <input id="manualPhone" type="tel" maxlength="40" autocomplete="tel" required />
+                </label>
+                <label>Correo electrónico <span>(opcional)</span>
+                  <input id="manualEmail" type="email" maxlength="254" autocomplete="email" />
+                </label>
+                <label class="appointment-form__wide">Notas <span>(opcional)</span>
+                  <textarea id="manualNotes" rows="2" maxlength="2000"></textarea>
+                </label>
+                <p class="appointment-form__message" id="manualAppointmentMessage" aria-live="polite"></p>
+                <button class="management-button" id="saveManualAppointment" type="submit">Guardar turno</button>
+              </form>
+            </div>
             <div class="management-toolbar">
               <div class="management-toolbar__controls">
                 <input class="management-search" id="appointmentSearch" type="search" placeholder="Buscar por cliente, teléfono o servicio" aria-label="Buscar turnos" />
@@ -122,12 +160,150 @@
       const turnosEnActualizacion = new Set();
       const mensajesPorTurno = new Map();
       const turnosConPagoAbierto = new Set();
+      const horariosDisponibles = ['09:00', '11:00', '13:00', '15:00', '17:00', '19:00'];
+      const formularioTurnoManual = document.getElementById('appointmentFormPanel');
+      const botonFormularioTurnoManual = document.getElementById('toggleAppointmentForm');
+      const fechaTurnoManual = document.getElementById('manualDate');
+      const horarioTurnoManual = document.getElementById('manualTime');
+      const servicioTurnoManual = document.getElementById('manualService');
+      const mensajeTurnoManual = document.getElementById('manualAppointmentMessage');
+      const guardarTurnoManual = document.getElementById('saveManualAppointment');
       const formasPago = [
         ['efectivo', 'Efectivo'],
         ['transferencia', 'Transferencia'],
         ['cuenta_bancaria', 'Cuenta bancaria']
       ];
       let turnos = [];
+      let consultaHorariosManual = 0;
+
+      function mostrarMensajeTurnoManual(texto, error = false) {
+        mensajeTurnoManual.textContent = texto;
+        mensajeTurnoManual.dataset.kind = error ? 'error' : 'success';
+      }
+
+      async function cargarServiciosManual() {
+        const { data, error } = await window.auraSupabase
+          .from('tipos')
+          .select('id, nombre')
+          .order('nombre');
+        if (error) {
+          console.error('No se pudieron cargar servicios para el turno manual:', error);
+          servicioTurnoManual.replaceChildren(new Option('No se pudieron cargar los servicios', ''));
+          mostrarMensajeTurnoManual('No se pudieron cargar los servicios. Recargá la página e intentá de nuevo.', true);
+          return;
+        }
+
+        servicioTurnoManual.replaceChildren(new Option('Seleccioná un servicio', ''));
+        (data || []).forEach((servicio) => {
+          servicioTurnoManual.add(new Option(servicio.nombre, String(servicio.id)));
+        });
+        if (!data?.length) {
+          mostrarMensajeTurnoManual('Primero agregá un servicio para poder crear un turno.', true);
+        }
+      }
+
+      async function cargarHorariosManuales() {
+        const fecha = fechaTurnoManual.value;
+        const consultaActual = ++consultaHorariosManual;
+        horarioTurnoManual.replaceChildren();
+        if (!fecha) {
+          horarioTurnoManual.add(new Option('Elegí una fecha primero', ''));
+          return;
+        }
+
+        horarioTurnoManual.disabled = true;
+        horarioTurnoManual.add(new Option('Buscando horarios…', ''));
+        try {
+          const { data, error } = await window.auraSupabase.rpc('get_booked_hours', { p_fecha: fecha });
+          if (error) throw error;
+          if (consultaActual !== consultaHorariosManual) return;
+          horarioTurnoManual.replaceChildren();
+          const ocupados = new Set((data || []).map((turno) => turno.hora));
+          const libres = horariosDisponibles.filter((hora) => !ocupados.has(hora));
+          if (!libres.length) {
+            horarioTurnoManual.add(new Option('No hay horarios disponibles', ''));
+            return;
+          }
+          horarioTurnoManual.add(new Option('Seleccioná un horario', ''));
+          libres.forEach((hora) => horarioTurnoManual.add(new Option(`${hora} hs`, hora)));
+        } catch (error) {
+          if (consultaActual !== consultaHorariosManual) return;
+          console.error('No se pudieron consultar los horarios del turno manual:', error);
+          horarioTurnoManual.replaceChildren(new Option('Error al consultar horarios', ''));
+          mostrarMensajeTurnoManual('No se pudieron consultar los horarios. Volvé a elegir la fecha para intentar otra vez.', true);
+        } finally {
+          if (consultaActual === consultaHorariosManual) horarioTurnoManual.disabled = false;
+        }
+      }
+
+      botonFormularioTurnoManual.addEventListener('click', () => {
+        formularioTurnoManual.hidden = !formularioTurnoManual.hidden;
+        botonFormularioTurnoManual.setAttribute('aria-expanded', String(!formularioTurnoManual.hidden));
+        if (!formularioTurnoManual.hidden) {
+          fechaTurnoManual.min = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+          if (!fechaTurnoManual.value) fechaTurnoManual.value = fechaTurnoManual.min;
+          cargarHorariosManuales();
+          servicioTurnoManual.focus();
+        }
+      });
+
+      fechaTurnoManual.addEventListener('change', () => {
+        mostrarMensajeTurnoManual('');
+        cargarHorariosManuales();
+      });
+
+      formularioTurnoManual.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        mostrarMensajeTurnoManual('');
+        const fecha = fechaTurnoManual.value;
+        const hora = horarioTurnoManual.value;
+        const tipoId = Number(servicioTurnoManual.value);
+        const nombre = document.getElementById('manualName').value.trim();
+        const telefono = document.getElementById('manualPhone').value.trim();
+        const email = document.getElementById('manualEmail').value.trim();
+        if (!fecha || !hora || !tipoId || !nombre || !telefono) {
+          mostrarMensajeTurnoManual('Completá el servicio, la fecha, el horario, el nombre y el teléfono.', true);
+          return;
+        }
+
+        guardarTurnoManual.disabled = true;
+        guardarTurnoManual.textContent = 'Guardando…';
+        try {
+          const { data: horariosOcupados, error: horarioError } = await window.auraSupabase
+            .rpc('get_booked_hours', { p_fecha: fecha });
+          if (horarioError) throw horarioError;
+          if ((horariosOcupados || []).some((turno) => turno.hora === hora)) {
+            mostrarMensajeTurnoManual('Ese horario acaba de ocuparse. Elegí otro horario.', true);
+            await cargarHorariosManuales();
+            return;
+          }
+
+          const { error } = await window.auraSupabase.from('turnos').insert({
+            nombre,
+            email: email || null,
+            telefono,
+            tipo_id: tipoId,
+            fecha,
+            hora,
+            notas: document.getElementById('manualNotes').value.trim() || null,
+            estado: 'confirmado',
+            push_subscription: null
+          });
+          if (error) throw error;
+
+          formularioTurnoManual.reset();
+          fechaTurnoManual.value = fecha;
+          await cargarHorariosManuales();
+          mostrarMensajeTurnoManual('Turno creado y confirmado.');
+          await cargarTurnos();
+        } catch (error) {
+          console.error('No se pudo crear el turno manual:', error);
+          mostrarMensajeTurnoManual(error.message || 'No se pudo crear el turno. Revisá los datos e intentá de nuevo.', true);
+        } finally {
+          guardarTurnoManual.disabled = false;
+          guardarTurnoManual.textContent = 'Guardar turno';
+        }
+      });
 
       function mostrarAviso(texto, error = false) {
         const aviso = document.createElement('p');
@@ -473,7 +649,7 @@
       async function iniciarTurnos() {
         const tieneAcceso = await verificarAccesoAdmin();
         if (tieneAcceso) {
-          await cargarTurnos();
+          await Promise.all([cargarTurnos(), cargarServiciosManual()]);
         } else {
           mostrarAviso('Iniciá sesión con una cuenta administradora para gestionar los turnos.', true);
         }
