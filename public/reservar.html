@@ -617,6 +617,7 @@
                   <span>Quiero recibir una notificación en este dispositivo cuando Aura Nails confirme mi turno.</span>
                 </label>
                 <p id="pushNotice" class="push-notice" aria-live="polite"></p>
+                <button id="pushActivateButton" class="secondary-btn" type="button" hidden>Activar notificaciones</button>
                 <p class="form-note">La seña y cualquier detalle del servicio se coordinan con Aura Nails Studio.</p>
                 <p id="error" class="error" role="alert" aria-live="polite"></p>
                 <div class="step-actions">
@@ -665,20 +666,110 @@
       const errorBox = document.getElementById('error');
       const pushConsent = document.getElementById('pushConsent');
       const pushNotice = document.getElementById('pushNotice');
+      const pushActivateButton = document.getElementById('pushActivateButton');
       const pushPublicKey = window.AURA_SUPABASE?.pushPublicKey || '';
-      const supportsPush = window.isSecureContext &&
+      const browserSupportsPush = window.isSecureContext &&
         'serviceWorker' in navigator &&
         'PushManager' in window &&
         'Notification' in window;
-      if (!supportsPush || !pushPublicKey || pushPublicKey.startsWith('YOUR_')) {
-        pushConsent.disabled = true;
-        pushNotice.textContent = supportsPush
-          ? 'Las notificaciones todavía no están configuradas. Podés reservar igualmente.'
-          : 'Este navegador o conexión no admite notificaciones web seguras. Podés reservar igualmente.';
-      } else if (Notification.permission === 'denied') {
-        pushConsent.disabled = true;
-        pushNotice.textContent = 'Las notificaciones están bloqueadas en el navegador. Podés reservar igualmente.';
+      const isIOSDevice = /iPhone|iPad|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      const isInstalledApp = window.matchMedia('(display-mode: standalone)').matches ||
+        navigator.standalone === true;
+      const requiresIOSInstall = isIOSDevice && !isInstalledApp;
+      const supportsPush = browserSupportsPush && !requiresIOSInstall;
+
+      function actualizarEstadoPush() {
+        if (!supportsPush || !pushPublicKey || pushPublicKey.startsWith('YOUR_')) {
+          pushConsent.disabled = true;
+          pushConsent.checked = false;
+          pushActivateButton.hidden = true;
+          if (requiresIOSInstall) {
+            pushNotice.textContent = 'En iPhone, las notificaciones web requieren iOS 16.4 o posterior y abrir esta web desde un ícono instalado en la pantalla de inicio. En Safari, usá Compartir > Añadir a pantalla de inicio; luego abrí Aura Nails desde ese ícono.';
+          } else {
+            pushNotice.textContent = browserSupportsPush
+              ? 'Las notificaciones todavía no están configuradas. Podés reservar igualmente.'
+              : 'Este navegador o conexión no admite notificaciones web seguras. Podés reservar igualmente.';
+          }
+          return;
+        }
+
+        if (Notification.permission === 'denied') {
+          pushConsent.disabled = false;
+          pushConsent.checked = false;
+          pushActivateButton.hidden = true;
+          pushNotice.textContent = isIOSDevice
+            ? 'Las notificaciones están bloqueadas para esta web. iPhone no volverá a mostrar el aviso: abrí Ajustes > Notificaciones y habilitá Aura Nails. Si no aparece, quitá el ícono de la pantalla de inicio y agregá la web de nuevo desde Safari.'
+            : 'Las notificaciones están bloqueadas para este sitio. El navegador no volverá a mostrar el aviso hasta que las habilites en los permisos del sitio y recargues esta página.';
+          return;
+        }
+
+        pushConsent.disabled = false;
+        pushActivateButton.hidden = Notification.permission !== 'default';
+
+        if (Notification.permission === 'granted') {
+          pushNotice.textContent = 'El permiso del sitio está concedido. Si las notificaciones están apagadas en la configuración de Chrome o del dispositivo, activalas allí; el navegador no volverá a mostrar el aviso de permiso.';
+        } else {
+          pushNotice.textContent = 'Podés activar las notificaciones en este dispositivo con el botón de abajo.';
+        }
       }
+
+      pushActivateButton?.addEventListener('click', async () => {
+        if (!supportsPush || !pushPublicKey || pushPublicKey.startsWith('YOUR_')) return;
+        pushActivateButton.disabled = true;
+        try {
+          const permission = await Notification.requestPermission();
+          if (permission === 'granted') {
+            pushConsent.checked = true;
+          } else if (permission === 'denied') {
+            pushNotice.textContent = 'Chrome no concedió el permiso. Habilitá las notificaciones para este sitio desde el candado junto a la dirección y recargá.';
+          } else {
+            pushNotice.textContent = 'No se concedió el permiso. Podés volver a intentarlo cuando quieras.';
+          }
+          actualizarEstadoPush();
+        } catch (error) {
+          console.error('No se pudo solicitar permiso para notificaciones:', error);
+          pushNotice.textContent = 'No se pudo solicitar el permiso de notificaciones. Revisá la configuración de Chrome e intentá de nuevo.';
+        } finally {
+          pushActivateButton.disabled = false;
+        }
+      });
+
+      pushConsent.addEventListener('change', () => {
+        if (pushConsent.checked) {
+          if (Notification.permission === 'denied') {
+            pushConsent.checked = false;
+            actualizarEstadoPush();
+          } else if (Notification.permission === 'default') {
+            pushNotice.textContent = 'Solicitando permiso de notificaciones…';
+            Notification.requestPermission().then((permission) => {
+              if (permission === 'granted') {
+                pushNotice.textContent = '¡Listo! Permitiste las notificaciones. Se guardará la suscripción al confirmar la reserva.';
+                actualizarEstadoPush();
+                pushConsent.checked = true;
+              } else if (permission === 'denied') {
+                pushConsent.checked = false;
+                actualizarEstadoPush();
+              } else {
+                pushConsent.checked = false;
+                pushNotice.textContent = 'No se concedió el permiso. Podés volver a intentarlo cuando quieras.';
+              }
+            }).catch((error) => {
+              pushConsent.checked = false;
+              console.error('No se pudo solicitar permiso para notificaciones:', error);
+              pushNotice.textContent = 'No se pudo solicitar el permiso. En iPhone, abrí la web desde el ícono instalado en la pantalla de inicio.';
+            });
+          } else if (Notification.permission === 'granted') {
+            pushNotice.textContent = 'El permiso está concedido. Se guardará la suscripción al confirmar la reserva.';
+          }
+        } else if (pushConsent.disabled === false) {
+          pushNotice.textContent = Notification.permission === 'granted'
+            ? 'El permiso sigue concedido, pero no se solicitará una notificación para esta reserva.'
+            : '';
+        }
+      });
+
+      actualizarEstadoPush();
 
       function decodePushKey(value) {
         const encoded = value.replace(/-/g, '+').replace(/_/g, '/');
@@ -716,14 +807,6 @@
         }
         return subscription.toJSON();
       }
-
-      pushConsent.addEventListener('change', () => {
-        if (pushConsent.checked) {
-          pushNotice.textContent = 'Al enviar la reserva, el navegador te pedirá permiso para mostrar el aviso.';
-        } else if (pushConsent.disabled === false) {
-          pushNotice.textContent = '';
-        }
-      });
 
       const serviceOptions = document.getElementById('serviceOptions');
       const serviceDetail = document.getElementById('serviceDetail');
