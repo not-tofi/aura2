@@ -326,7 +326,7 @@
           nombre.textContent = turno.nombre || 'Sin nombre';
           const servicio = document.createElement('div');
           servicio.className = 'agenda-service';
-          servicio.textContent = turno.tipos?.nombre || 'Servicio sin especificar';
+          servicio.textContent = `${turno.tipos?.nombre || 'Servicio sin especificar'}${turno.tipos?.eliminado ? ' (eliminado)' : ''}`;
           detail.append(nombre, servicio);
 
           const estado = document.createElement('span');
@@ -352,8 +352,8 @@
 
         const hoy = fechaLocalISO();
         const [tiposResult, turnosResult, pendientesResult] = await Promise.all([
-          client.from('tipos').select('id', { count: 'exact', head: true }),
-          client.from('turnos').select('id, nombre, telefono, hora, estado, tipos (nombre)').eq('fecha', hoy).neq('estado', 'realizado').order('hora'),
+          client.from('tipos').select('id', { count: 'exact', head: true }).eq('eliminado', false),
+          client.from('turnos').select('id, nombre, telefono, hora, estado, tipos (nombre, eliminado)').eq('fecha', hoy).neq('estado', 'realizado').order('hora'),
           client.from('turnos').select('id', { count: 'exact', head: true }).eq('estado', 'pendiente')
         ]);
 

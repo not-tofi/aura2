@@ -194,10 +194,18 @@
           price.className = 'service-price';
           price.textContent = precioFormato.format(Number(tipo.precio) || 0);
           top.append(name, price);
+          if (tipo.eliminado) {
+            const status = document.createElement('span');
+            status.className = 'management-badge cancelado';
+            status.textContent = 'Eliminado';
+            top.appendChild(status);
+          }
           const meta = document.createElement('div');
           meta.className = 'management-card__meta';
           const caption = document.createElement('span');
-          caption.textContent = tipo.duracion ? `Duración: ${tipo.duracion}` : 'Disponible para nuevas reservas';
+          caption.textContent = tipo.eliminado
+            ? 'No disponible para nuevas reservas'
+            : tipo.duracion ? `Duración: ${tipo.duracion}` : 'Disponible para nuevas reservas';
           meta.appendChild(caption);
           if (tipo.descripcion) {
             const description = document.createElement('p');
@@ -205,13 +213,25 @@
             description.textContent = tipo.descripcion;
             meta.appendChild(description);
           }
-          const editar = document.createElement('button');
-          editar.className = 'management-action';
-          editar.type = 'button';
-          editar.textContent = 'Editar servicio';
-          editar.setAttribute('aria-label', `Editar servicio ${tipo.nombre}`);
-          editar.addEventListener('click', () => editarTipo(tipo));
-          content.append(top, meta, editar);
+          const actions = document.createElement('div');
+          actions.className = 'management-actions';
+          if (!tipo.eliminado) {
+            const editar = document.createElement('button');
+            editar.className = 'management-action';
+            editar.type = 'button';
+            editar.textContent = 'Editar servicio';
+            editar.setAttribute('aria-label', `Editar servicio ${tipo.nombre}`);
+            editar.addEventListener('click', () => editarTipo(tipo));
+            actions.appendChild(editar);
+          }
+          const toggleEstado = document.createElement('button');
+          toggleEstado.className = tipo.eliminado ? 'management-action management-action--done' : 'management-action';
+          toggleEstado.type = 'button';
+          toggleEstado.textContent = tipo.eliminado ? 'Restaurar servicio' : 'Eliminar servicio';
+          toggleEstado.setAttribute('aria-label', `${tipo.eliminado ? 'Restaurar' : 'Eliminar'} servicio ${tipo.nombre}`);
+          toggleEstado.addEventListener('click', () => cambiarEstadoTipo(tipo, !tipo.eliminado));
+          actions.appendChild(toggleEstado);
+          content.append(top, meta, actions);
           card.append(imageWrap, content);
           listaTipos.appendChild(card);
         });
@@ -226,7 +246,7 @@
 
         const { data, error } = await client
           .from('tipos')
-          .select('id, nombre, precio, descripcion, duracion, imagen_url, imagen_path')
+          .select('id, nombre, precio, descripcion, duracion, imagen_url, imagen_path, eliminado')
           .order('nombre');
         if (error) {
           console.error('No se pudieron cargar los servicios:', error);
@@ -238,8 +258,9 @@
         }
 
         tipos = (data || []).map((tipo) => ({ ...tipo, nombre: tipo.nombre || '' }));
-        const precios = tipos.map((tipo) => Number(tipo.precio)).filter(Number.isFinite);
-        document.getElementById('typeCount').textContent = String(tipos.length);
+        const tiposDisponibles = tipos.filter((tipo) => !tipo.eliminado);
+        const precios = tiposDisponibles.map((tipo) => Number(tipo.precio)).filter(Number.isFinite);
+        document.getElementById('typeCount').textContent = String(tiposDisponibles.length);
         document.getElementById('minPrice').textContent = precios.length ? precioFormato.format(Math.min(...precios)) : '—';
         document.getElementById('averagePrice').textContent = precios.length
           ? precioFormato.format(precios.reduce((sum, price) => sum + price, 0) / precios.length)
@@ -248,6 +269,41 @@
       }
 
       buscadorTipos.addEventListener('input', renderTipos);
+
+      async function cambiarEstadoTipo(tipo, eliminado) {
+        const accion = eliminado ? 'eliminar' : 'restaurar';
+        const confirmacion = eliminado
+          ? `¿Marcar el servicio "${tipo.nombre}" como eliminado? Se ocultará para nuevas reservas, pero se conservará en los turnos existentes.`
+          : `¿Restaurar el servicio "${tipo.nombre}" para que vuelva a aparecer en las reservas?`;
+        if (!window.confirm(confirmacion)) return;
+
+        const client = window.auraSupabase;
+        if (!client) {
+          mensajeTipo.textContent = 'No hay conexión con Supabase. Revisá la configuración.';
+          mensajeTipo.dataset.kind = 'error';
+          return;
+        }
+
+        try {
+          const { data, error } = await client
+            .from('tipos')
+            .update({ eliminado })
+            .eq('id', tipo.id)
+            .select('id')
+            .maybeSingle();
+          if (error) throw error;
+          if (!data) throw new Error('No se pudo actualizar el servicio. Verificá que tu sesión de administrador siga activa.');
+
+          if (tipoEditando?.id === tipo.id) cancelarEdicion();
+          mensajeTipo.textContent = eliminado ? 'Servicio eliminado de las nuevas reservas.' : 'Servicio restaurado correctamente.';
+          mensajeTipo.dataset.kind = 'success';
+          await cargarTipos();
+        } catch (error) {
+          console.error(`No se pudo ${accion} el servicio:`, error);
+          mensajeTipo.textContent = error.message || `No se pudo ${accion} el servicio. Intentá de nuevo.`;
+          mensajeTipo.dataset.kind = 'error';
+        }
+      }
 
       function editarTipo(tipo) {
         tipoEditando = tipo;

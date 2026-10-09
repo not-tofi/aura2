@@ -335,7 +335,7 @@
           meta.className = 'management-card__meta';
           const precio = turno.precio_pagado ?? turno.tipos?.precio;
           const detalles = [
-            `Servicio: ${turno.tipos?.nombre || 'Sin tipo'}`,
+            `Servicio: ${turno.tipos?.nombre || 'Sin tipo'}${turno.tipos?.eliminado ? ' (eliminado)' : ''}`,
             `Precio del servicio: ${precio !== null && precio !== undefined && Number.isFinite(Number(precio)) ? formatoMoneda.format(Number(precio)) : 'Sin precio registrado'}`,
             `Fecha: ${fechaLegible(turno.fecha)}`,
             `Horario: ${turno.hora || 'Sin horario'}`,
@@ -364,7 +364,7 @@
 
         const { data, error } = await client
           .from('turnos')
-          .select('id, nombre, telefono, fecha, hora, notas, estado, tipo_id, forma_pago, precio_pagado, tipos (id, nombre, precio)')
+          .select('id, nombre, telefono, fecha, hora, notas, estado, tipo_id, forma_pago, precio_pagado, tipos (id, nombre, precio, eliminado)')
           .neq('estado', 'pendiente')
           .order('fecha', { ascending: false })
           .order('hora', { ascending: false });

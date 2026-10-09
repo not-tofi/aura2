@@ -185,6 +185,7 @@
         const { data, error } = await window.auraSupabase
           .from('tipos')
           .select('id, nombre')
+          .eq('eliminado', false)
           .order('nombre');
         if (error) {
           console.error('No se pudieron cargar servicios para el turno manual:', error);
@@ -370,7 +371,7 @@
           [
             `Correo: ${turno.email || 'Sin correo'}`,
             `Teléfono: ${turno.telefono || 'Sin teléfono'}`,
-            `Servicio: ${turno.tipos?.nombre || 'Sin tipo'}`,
+            `Servicio: ${turno.tipos?.nombre || 'Sin tipo'}${turno.tipos?.eliminado ? ' (eliminado)' : ''}`,
             `Fecha: ${fechaLegible(turno.fecha)}`,
             `Horario: ${turno.hora || 'Sin horario'}`,
             `Notas: ${turno.notas || 'Sin notas'}`
@@ -479,7 +480,7 @@
 
         const { data, error } = await client
           .from('turnos')
-          .select('id, nombre, email, telefono, fecha, hora, notas, estado, forma_pago, precio_pagado, tipos (id, nombre, precio)')
+          .select('id, nombre, email, telefono, fecha, hora, notas, estado, forma_pago, precio_pagado, tipos (id, nombre, precio, eliminado)')
           .neq('estado', 'realizado')
           .order('fecha', { ascending: true })
           .order('hora', { ascending: true });

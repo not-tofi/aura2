@@ -405,43 +405,45 @@
 
 .service-management-card {
   display: grid;
-  grid-template-columns: 100px minmax(0, 1fr);
+  grid-template-columns: 88px minmax(0, 1fr);
   align-items: stretch;
-  gap: 15px;
-  padding: 10px;
+  gap: 12px;
+  padding: 8px;
 }
 
 .service-management-card__visual {
   display: grid;
-  min-height: 96px;
+  min-height: 88px;
   overflow: hidden;
   place-items: center;
-  border-radius: 12px;
+  border-radius: 10px;
   background: linear-gradient(145deg, #f1e3d9, #f8f1e9);
 }
 
 .service-management-card__image {
   width: 100%;
-  height: 100%;
-  min-height: 96px;
+  height: 88px;
   object-fit: cover;
 }
 
 .service-management-card__placeholder {
   color: var(--primary);
-  font-size: 1.6rem;
+  font-size: 1.35rem;
 }
 
 .service-management-card__content {
   display: grid;
   min-width: 0;
   align-content: center;
-  gap: 8px;
-  padding: 5px 7px 5px 0;
+  gap: 5px;
+  padding: 2px 4px 2px 0;
 }
 
-.service-management-card .management-card__meta { margin-top: 0; }
-.service-management-card .management-card__description { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.service-management-card .management-card__top { gap: 8px; }
+.service-management-card .management-card__meta { gap: 4px 12px; margin-top: 0; font-size: .68rem; }
+.service-management-card .management-card__description { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: .69rem; line-height: 1.4; }
+.service-management-card .management-actions { gap: 6px; margin-top: 0; }
+.service-management-card .management-action { min-height: 31px; padding: 6px 9px; font-size: .64rem; }
 
 .appointment-create {
   display: grid;
@@ -1017,8 +1019,8 @@ body.client-drawer-open .btn-opciones { visibility: hidden; }
   .service-form__wide,
   .service-form button { grid-column: auto; }
   .service-management-card { grid-template-columns: 76px minmax(0, 1fr); gap: 10px; }
-  .service-management-card__visual,
-  .service-management-card__image { min-height: 82px; }
+  .service-management-card__visual { min-height: 76px; }
+  .service-management-card__image { height: 76px; }
   .appointment-create__heading { align-items: flex-start; flex-direction: column; }
   .appointment-create__heading .management-button { width: 100%; }
   .appointment-form { grid-template-columns: 1fr; }
