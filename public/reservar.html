@@ -843,7 +843,7 @@
       async function cargarTipos() {
         const client = window.auraSupabase;
         if (!client) {
-          serviceOptions.innerHTML = '<p class="booking-loading">No se pudo conectar con el catálogo de servicios. Revisá la configuración de Supabase.</p>';
+          serviceOptions.innerHTML = '<p class="booking-loading">No se pudo cargar el catálogo de servicios. Intentá nuevamente más tarde.</p>';
           return;
         }
 
@@ -1013,7 +1013,7 @@
         });
         timeOptions.innerHTML = '<p class="booking-loading">Buscando horarios disponibles…</p>';
         if (!window.auraSupabase) {
-          timeOptions.innerHTML = '<p class="booking-loading">Falta configurar Supabase para consultar los horarios.</p>';
+          timeOptions.innerHTML = '<p class="booking-loading">No se pudieron cargar los horarios. Intentá nuevamente más tarde.</p>';
           return;
         }
         let data;
@@ -1086,7 +1086,7 @@
         errorBox.textContent = '';
 
         if (!window.auraSupabase) {
-          errorBox.textContent = 'Falta configurar Supabase en el proyecto.';
+          errorBox.textContent = 'No se pudo completar la reserva. Intentá nuevamente más tarde.';
           return;
         }
 

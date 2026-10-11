@@ -346,7 +346,7 @@
           new Intl.DateTimeFormat('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
 
         if (!client) {
-          agenda.innerHTML = '<p class="agenda-error">No se pudo conectar con la base de datos. Revisá la configuración de Supabase.</p>';
+          agenda.innerHTML = '<p class="agenda-error">No se pudo cargar la agenda. Intentá nuevamente más tarde.</p>';
           return;
         }
 

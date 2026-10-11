@@ -258,7 +258,7 @@
       async function cargarClientes() {
         const client = window.auraSupabase;
         if (!client) {
-          mostrarAviso(listaClientes, 'Falta configurar Supabase para consultar los clientes.', true);
+          mostrarAviso(listaClientes, 'No se pudieron cargar los clientes. Intentá nuevamente más tarde.', true);
           return;
         }
 
@@ -269,7 +269,7 @@
 
         if (error) {
           console.error('No se pudieron cargar los clientes:', error);
-          mostrarAviso(listaClientes, 'No se pudieron cargar los clientes. Revisá que la tabla clientes esté creada en Supabase.', true);
+          mostrarAviso(listaClientes, 'No se pudieron cargar los clientes. Intentá nuevamente más tarde.', true);
           return;
         }
 
@@ -365,7 +365,7 @@
 
         const client = window.auraSupabase;
         if (!client) {
-          mostrarAviso(listaClientes, 'No hay conexión con Supabase. Revisá la configuración.', true);
+          mostrarAviso(listaClientes, 'No hay conexión. Revisá tu conexión a internet e intentá nuevamente.', true);
           return;
         }
 

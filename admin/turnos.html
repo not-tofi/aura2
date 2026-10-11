@@ -474,7 +474,7 @@
       async function cargarTurnos() {
         const client = window.auraSupabase;
         if (!client) {
-          mostrarAviso('Falta configurar Supabase para consultar los turnos.', true);
+          mostrarAviso('No se pudieron cargar los turnos. Intentá nuevamente más tarde.', true);
           return;
         }
 

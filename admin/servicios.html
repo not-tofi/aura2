@@ -240,7 +240,7 @@
       async function cargarTipos() {
         const client = window.auraSupabase;
         if (!client) {
-          mostrarAviso('Falta configurar Supabase para consultar los servicios.', true);
+          mostrarAviso('No se pudieron cargar los servicios. Intentá nuevamente más tarde.', true);
           return;
         }
 

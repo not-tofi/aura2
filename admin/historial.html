@@ -358,7 +358,7 @@
       async function cargarHistorial() {
         const client = window.auraSupabase;
         if (!client) {
-          mostrarAviso('Falta configurar Supabase para consultar el historial.', true);
+          mostrarAviso('No se pudo cargar el historial. Intentá nuevamente más tarde.', true);
           return;
         }
 
