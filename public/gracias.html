@@ -48,7 +48,17 @@
     <div class="card">
       <h1>¡Turno enviado!</h1>
       <p>Gracias por reservar con nosotros. El equipo de Aura Nails va a revisar tu solicitud y te va a confirmar por teléfono.</p>
+      <p id="notificationWarning" hidden>Tu solicitud se guardó, pero el equipo podría tardar en enterarse. Si necesitás confirmación, contactá directamente a Aura Nails.</p>
       <a href="./reservar.html">Reservar otro turno</a>
     </div>
+    <script>
+      const notificationWarning = document.getElementById('notificationWarning');
+      try {
+        notificationWarning.hidden = sessionStorage.getItem('aura-admin-notification-warning') !== 'true';
+        sessionStorage.removeItem('aura-admin-notification-warning');
+      } catch (error) {
+        console.error('No se pudo recuperar el estado del aviso de reserva:', error);
+      }
+    </script>
   </body>
 </html>

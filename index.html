@@ -69,10 +69,24 @@
     </main>
     <iframe id="auraContent" name="aura-content" title="Contenido de Aura Nails" hidden></iframe>
     <script>
-      window.AURA_URL_SHELL.start(
-        document.getElementById('auraContent'),
-        document.querySelector('main.home')
-      );
+      const auraContent = document.getElementById('auraContent');
+      let deferredInstallPrompt = null;
+
+      function compartirEventoInstalacion() {
+        if (!deferredInstallPrompt || !auraContent.contentWindow) return;
+        auraContent.contentWindow.dispatchEvent(new CustomEvent('aura-beforeinstallprompt', {
+          detail: deferredInstallPrompt
+        }));
+      }
+
+      window.addEventListener('beforeinstallprompt', (event) => {
+        event.preventDefault();
+        deferredInstallPrompt = event;
+        compartirEventoInstalacion();
+      });
+      auraContent.addEventListener('load', compartirEventoInstalacion);
+
+      window.AURA_URL_SHELL.start(auraContent, document.querySelector('main.home'));
     </script>
   </body>
 </html>

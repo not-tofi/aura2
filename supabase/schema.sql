@@ -30,6 +30,8 @@ create table if not exists public.turnos (
   forma_pago text,
   precio_pagado numeric,
   push_subscription jsonb,
+  admin_notification_token uuid,
+  admin_notification_sent boolean not null default false,
   created_at timestamptz not null default now()
 );
 
@@ -65,7 +67,42 @@ alter table public.turnos
   add column if not exists email text,
   add column if not exists forma_pago text,
   add column if not exists precio_pagado numeric,
-  add column if not exists push_subscription jsonb;
+  add column if not exists push_subscription jsonb,
+  add column if not exists admin_notification_token uuid,
+  add column if not exists admin_notification_sent boolean not null default false;
+
+create unique index if not exists turnos_admin_notification_token_idx
+  on public.turnos (admin_notification_token)
+  where admin_notification_token is not null;
+
+create table if not exists public.admin_push_subscriptions (
+  endpoint text primary key check (endpoint ~ '^https://' and char_length(endpoint) between 1 and 2048),
+  admin_id uuid not null references auth.users(id) on delete cascade,
+  subscription jsonb not null check (
+    jsonb_typeof(subscription) = 'object' and
+    subscription - 'endpoint' - 'keys' - 'expirationTime' = '{}'::jsonb and
+    subscription ? 'endpoint' and
+    subscription ? 'keys' and
+    (
+      not (subscription ? 'expirationTime') or
+      jsonb_typeof(subscription -> 'expirationTime') in ('null', 'number')
+    ) and
+    jsonb_typeof(subscription -> 'endpoint') = 'string' and
+    subscription ->> 'endpoint' = endpoint and
+    jsonb_typeof(subscription -> 'keys') = 'object' and
+    (subscription -> 'keys') - 'p256dh' - 'auth' = '{}'::jsonb and
+    (subscription -> 'keys') ? 'p256dh' and
+    (subscription -> 'keys') ? 'auth' and
+    jsonb_typeof(subscription -> 'keys' -> 'p256dh') = 'string' and
+    jsonb_typeof(subscription -> 'keys' -> 'auth') = 'string' and
+    char_length(coalesce(subscription -> 'keys' ->> 'p256dh', '')) between 1 and 256 and
+    char_length(coalesce(subscription -> 'keys' ->> 'auth', '')) between 1 and 256
+  ),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists admin_push_subscriptions_admin_id_idx
+  on public.admin_push_subscriptions (admin_id);
 
 CREATE OR REPLACE FUNCTION public.validar_tipo_turno_activo()
 RETURNS trigger
@@ -147,6 +184,7 @@ alter table public.turnos enable row level security;
 alter table public.clientes enable row level security;
 alter table public.redes_sociales enable row level security;
 alter table public.disenios enable row level security;
+alter table public.admin_push_subscriptions enable row level security;
 
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS boolean
@@ -167,15 +205,22 @@ GRANT INSERT, UPDATE ON public.tipos TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.clientes TO authenticated;
 GRANT INSERT, UPDATE, DELETE ON public.redes_sociales, public.disenios TO authenticated;
 GRANT SELECT, UPDATE, DELETE ON public.turnos TO authenticated;
+REVOKE ALL ON public.admin_push_subscriptions FROM PUBLIC, anon, authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.admin_push_subscriptions TO authenticated;
 REVOKE INSERT (
   id, nombre, email, telefono, tipo_id, fecha, hora, notas, estado,
-  forma_pago, precio_pagado, push_subscription, created_at
+  forma_pago, precio_pagado, push_subscription, admin_notification_token,
+  admin_notification_sent, created_at
 ) ON public.turnos FROM PUBLIC, anon, authenticated;
 REVOKE UPDATE (
   id, nombre, email, telefono, tipo_id, fecha, hora, notas, estado,
-  forma_pago, precio_pagado, push_subscription, created_at
+  forma_pago, precio_pagado, push_subscription, admin_notification_token,
+  admin_notification_sent, created_at
 ) ON public.turnos FROM PUBLIC, anon, authenticated;
-GRANT INSERT (nombre, email, telefono, tipo_id, fecha, hora, notas, estado, push_subscription)
+GRANT INSERT (
+  nombre, email, telefono, tipo_id, fecha, hora, notas, estado,
+  push_subscription, admin_notification_token
+)
   ON public.turnos TO anon, authenticated;
 REVOKE ALL ON SEQUENCE public.tipos_id_seq, public.clientes_id_seq,
   public.redes_sociales_id_seq, public.disenios_id_seq FROM PUBLIC, anon, authenticated;
@@ -408,6 +453,23 @@ BEGIN
       public.is_admin()
     )
   );
+
+  DROP POLICY IF EXISTS "admin_push_subscriptions_select_own" ON public.admin_push_subscriptions;
+  CREATE POLICY "admin_push_subscriptions_select_own" ON public.admin_push_subscriptions
+    FOR SELECT USING (auth.uid() = admin_id AND public.is_admin());
+
+  DROP POLICY IF EXISTS "admin_push_subscriptions_insert_own" ON public.admin_push_subscriptions;
+  CREATE POLICY "admin_push_subscriptions_insert_own" ON public.admin_push_subscriptions
+    FOR INSERT WITH CHECK (auth.uid() = admin_id AND public.is_admin());
+
+  DROP POLICY IF EXISTS "admin_push_subscriptions_update_own" ON public.admin_push_subscriptions;
+  CREATE POLICY "admin_push_subscriptions_update_own" ON public.admin_push_subscriptions
+    FOR UPDATE USING (auth.uid() = admin_id AND public.is_admin())
+    WITH CHECK (auth.uid() = admin_id AND public.is_admin());
+
+  DROP POLICY IF EXISTS "admin_push_subscriptions_delete_own" ON public.admin_push_subscriptions;
+  CREATE POLICY "admin_push_subscriptions_delete_own" ON public.admin_push_subscriptions
+    FOR DELETE USING (auth.uid() = admin_id AND public.is_admin());
 END $$;
 
 CREATE OR REPLACE FUNCTION public.get_booked_hours(p_fecha date)

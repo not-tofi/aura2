@@ -7,7 +7,7 @@
     <meta name="description" content="Panel administrativo de Aura Nails." />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Aura Admin" />
-    <link rel="manifest" href="../manifest.json" />
+    <link rel="manifest" href="../manifest-admin.json" />
     <title>Admin - Aura Nails</title>
     <link rel="stylesheet" href="../assets/css/styles.css" />
     <script src="../assets/js/root-url.js"></script>
@@ -56,6 +56,22 @@
         text-decoration: none;
         transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
       }
+      .welcome-actions button {
+        display: inline-flex;
+        min-height: 42px;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 9px 15px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: rgba(255,255,255,.72);
+        color: var(--primary-strong);
+        font-size: .75rem;
+        font-weight: 800;
+        cursor: pointer;
+      }
+      .welcome-actions button[hidden] { display: none; }
       .welcome-actions a:first-child { border-color: transparent; background: var(--primary-strong); color: white; }
       .welcome-actions a:hover, .action-link:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(94,66,56,.12); }
       .welcome-mark {
@@ -127,6 +143,20 @@
       .agenda-status.cancelado { background: #f7e5e3; color: #9b5149; }
       .agenda-empty, .agenda-error { padding: 20px 8px; color: var(--muted); font-size: .83rem; text-align: center; }
       .action-panel p { margin: 7px 0 17px; color: var(--muted); font-size: .78rem; line-height: 1.6; }
+      .admin-push-button {
+        width: 100%;
+        min-height: 42px;
+        padding: 10px 13px;
+        border: 0;
+        border-radius: 13px;
+        background: var(--primary-strong);
+        color: white;
+        font-size: .75rem;
+        font-weight: 800;
+        cursor: pointer;
+      }
+      .admin-push-button:disabled { cursor: wait; opacity: .65; }
+      .action-panel .admin-push-notice { margin: 8px 0 17px; font-size: .7rem; }
       .action-list { display: grid; gap: 9px; }
       .action-link { justify-content: flex-start; border-radius: 13px; padding: 11px 13px; }
       .action-link span { display: grid; gap: 2px; }
@@ -187,6 +217,7 @@
               <div class="welcome-actions">
                 <a href="turnos.html">Abrir agenda <span aria-hidden="true">↗</span></a>
                 <a href="servicios.html">Gestionar servicios</a>
+                <button id="adminInstallButton" type="button" hidden>Instalar panel</button>
               </div>
             </div>
             <img class="welcome-mark" src="../assets/img/aura-icon.png" alt="" />
@@ -225,6 +256,8 @@
             <aside class="panel action-panel">
               <h2>Accesos rápidos</h2>
               <p>Todo lo que necesitás para mantener tu estudio al día.</p>
+              <button id="adminPushButton" class="admin-push-button" type="button">Activar avisos de reservas</button>
+              <p id="adminPushNotice" class="admin-push-notice" aria-live="polite">Recibí un aviso cuando llegue una nueva solicitud.</p>
               <div class="action-list">
                 <a class="action-link" href="turnos.html"><span>◷</span><span><strong>Administrar turnos</strong><small>Revisá y actualizá la agenda</small></span></a>
                 <a class="action-link" href="clientes.html"><span>♡</span><span><strong>Ver clientes</strong><small>Consultá sus datos de contacto</small></span></a>
@@ -247,6 +280,114 @@
           navigator.serviceWorker.register(swUrl).catch(() => {});
         });
       }
+
+      const adminPushButton = document.getElementById('adminPushButton');
+      const adminPushNotice = document.getElementById('adminPushNotice');
+      const adminInstallButton = document.getElementById('adminInstallButton');
+      let deferredInstallPrompt = null;
+
+      function decodePushKey(value) {
+        const encoded = value.replace(/-/g, '+').replace(/_/g, '/');
+        const base64 = encoded + '='.repeat((4 - encoded.length % 4) % 4);
+        const raw = atob(base64);
+        return Uint8Array.from(raw, (character) => character.charCodeAt(0));
+      }
+
+      function receiveInstallPrompt(event) {
+        deferredInstallPrompt = event;
+        adminInstallButton.hidden = false;
+      }
+
+      window.addEventListener('aura-beforeinstallprompt', (event) => {
+        receiveInstallPrompt(event.detail);
+      });
+      window.addEventListener('beforeinstallprompt', (event) => {
+        event.preventDefault();
+        receiveInstallPrompt(event);
+      });
+
+      adminInstallButton.addEventListener('click', async () => {
+        if (!deferredInstallPrompt) return;
+        deferredInstallPrompt.prompt();
+        await deferredInstallPrompt.userChoice;
+        deferredInstallPrompt = null;
+        adminInstallButton.hidden = true;
+      });
+
+      adminPushButton.addEventListener('click', async () => {
+        const client = window.auraSupabase;
+        const pushPublicKey = window.AURA_SUPABASE?.pushPublicKey || '';
+        if (!client || !pushPublicKey || pushPublicKey.startsWith('YOUR_')) {
+          adminPushNotice.textContent = 'Los avisos no están disponibles en este momento.';
+          return;
+        }
+        if (!window.isSecureContext || !('serviceWorker' in navigator) ||
+          !('PushManager' in window) || !('Notification' in window)) {
+          adminPushNotice.textContent = 'Este navegador o dispositivo no admite avisos web.';
+          return;
+        }
+        const isIOSDevice = /iPhone|iPad|iPod/.test(navigator.userAgent) ||
+          (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        const isInstalledApp = window.matchMedia('(display-mode: standalone)').matches ||
+          navigator.standalone === true;
+        if (isIOSDevice && !isInstalledApp) {
+          adminPushNotice.textContent = 'En iPhone, agregá primero el panel a la pantalla de inicio desde Safari y activá los avisos al abrir la app instalada.';
+          return;
+        }
+
+        adminPushButton.disabled = true;
+        try {
+          const permission = Notification.permission === 'granted'
+            ? 'granted'
+            : await Notification.requestPermission();
+          if (permission !== 'granted') {
+            adminPushNotice.textContent = permission === 'denied'
+              ? 'Los avisos están bloqueados. Habilitalos en los permisos del navegador y volvé a intentarlo.'
+              : 'No se concedió el permiso. Podés volver a intentarlo cuando quieras.';
+            return;
+          }
+
+          await navigator.serviceWorker.register('../sw.js');
+          const activeRegistration = await navigator.serviceWorker.ready;
+          const applicationServerKey = decodePushKey(pushPublicKey);
+          let subscription = await activeRegistration.pushManager.getSubscription();
+          if (subscription) {
+            const currentKey = subscription.options.applicationServerKey;
+            const keyMatches = currentKey &&
+              currentKey.byteLength === applicationServerKey.byteLength &&
+              applicationServerKey.every((byte, index) => byte === currentKey[index]);
+            if (!keyMatches) {
+              await subscription.unsubscribe();
+              subscription = null;
+            }
+          }
+          if (!subscription) {
+            subscription = await activeRegistration.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey
+            });
+          }
+
+          const { data: userData, error: userError } = await client.auth.getUser();
+          if (userError || !userData.user) throw userError || new Error('No se encontró la sesión administrativa.');
+
+          const subscriptionJson = subscription.toJSON();
+          const { error } = await client.from('admin_push_subscriptions').upsert({
+            admin_id: userData.user.id,
+            endpoint: subscriptionJson.endpoint,
+            subscription: subscriptionJson
+          }, { onConflict: 'endpoint' });
+          if (error) throw error;
+
+          adminPushNotice.textContent = 'Listo. Este dispositivo recibirá avisos de nuevas reservas.';
+          adminPushButton.textContent = 'Avisos activados';
+        } catch (error) {
+          console.error('No se pudieron activar los avisos de reservas:', error);
+          adminPushNotice.textContent = 'No se pudieron activar los avisos. Intentá nuevamente.';
+        } finally {
+          adminPushButton.disabled = false;
+        }
+      });
 
       async function verificarAccesoAdmin() {
         if (!window.AURA_SUPABASE) {

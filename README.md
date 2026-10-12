@@ -15,6 +15,7 @@
 - `supabase/schema.sql`: esquema de base de datos para Supabase.
 - `assets/js/supabase-config.js`: configuración base para Supabase.
 - `supabase/functions/send-turno-confirmation/index.ts`: envío seguro de confirmaciones web push.
+- `supabase/functions/notify-new-booking/index.ts`: aviso push al equipo cuando llega una reserva.
 
 ## Configuración de Supabase
 
@@ -87,11 +88,11 @@ GitHub Pages sólo aloja archivos estáticos; Supabase sigue siendo necesario pa
 - **Site URL:** `https://auranails.shop/`
 - **Redirect URLs:** `https://auranails.shop/**` y `https://www.auranails.shop/**`
 
-### Notificaciones de confirmación
+### Notificaciones web
 
-Las notificaciones son opcionales. En la reserva, la persona puede aceptar recibir un aviso en ese dispositivo; el navegador también debe conceder permiso. Si no acepta o el navegador no lo admite, la reserva se procesa normalmente, pero no se envía el aviso. Al pasar el estado de pendiente a confirmado, el panel invoca una Edge Function que valida la sesión y el rol del administrador, consulta la reserva en el servidor y envía el push. La clave privada VAPID y la clave `service_role` nunca deben agregarse al sitio ni al repositorio.
+Las notificaciones son opcionales. En la reserva, la persona puede aceptar recibir un aviso en ese dispositivo cuando se confirme su turno. En el panel de administración, el botón **Activar avisos de reservas** registra cada dispositivo administrador para recibir un aviso cuando llega una solicitud nueva; el navegador debe conceder permiso. Si no hay un dispositivo administrador suscrito, la reserva se guarda igualmente, pero el aviso no se envía.
 
-1. Ejecutar nuevamente `supabase/schema.sql` en el SQL Editor para instalar las restricciones, permisos mínimos y el campo privado de suscripción.
+1. Ejecutar nuevamente `supabase/schema.sql` en el SQL Editor para instalar las restricciones, permisos mínimos y las tablas de suscripción de avisos.
 2. Generar un par VAPID desde una terminal con `npx --yes web-push generate-vapid-keys --json`. Copiar la clave `publicKey` a `pushPublicKey` en `assets/js/supabase-config.js`; esta clave es pública.
 3. Instalar y autenticar [Supabase CLI](https://supabase.com/docs/guides/cli), y vincularlo con el proyecto (el `project-ref` está en la URL de Supabase):
 
@@ -105,13 +106,18 @@ supabase link --project-ref TU_PROJECT_REF
 supabase secrets set AURA_VAPID_PUBLIC_KEY="CLAVE_PUBLICA" AURA_VAPID_PRIVATE_KEY="CLAVE_PRIVADA" AURA_VAPID_SUBJECT="mailto:admin@auranails.shop"
 ```
 
-5. Publicar la Edge Function:
+5. Publicar las Edge Functions:
 
 ```powershell
 supabase functions deploy send-turno-confirmation
+supabase functions deploy notify-new-booking
 ```
 
-6. Publicar el sitio actualizado. La autorización de la función y las políticas RLS requieren una sesión Supabase válida con el rol `admin` de `app_metadata`.
+6. Publicar el sitio actualizado. Para activar avisos, iniciar sesión en el panel desde cada dispositivo y pulsar **Activar avisos de reservas**. La configuración del despliegue valida la solicitud de nuevas reservas mediante un identificador aleatorio de un solo uso; la suscripción de cada dispositivo queda limitada al usuario administrador autenticado.
+
+### Instalación como aplicación
+
+La aplicación instalada desde una pantalla de administración se inicia en el panel administrativo y requiere iniciar sesión; instalada desde **Reservar tu turno**, se inicia directamente en el formulario de reservas. Son instalaciones separadas y el acceso administrativo sigue protegido por inicio de sesión y permisos.
 
 No guardar la clave privada VAPID, `SUPABASE_SERVICE_ROLE_KEY` ni ninguna clave secreta en `assets/js/supabase-config.js`. La clave pública VAPID sí debe estar configurada en el sitio y debe corresponder al par privado guardado en Supabase.
 

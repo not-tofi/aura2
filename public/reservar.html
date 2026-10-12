@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Aura Nails" />
-    <link rel="manifest" href="../manifest.json" />
+    <link rel="manifest" href="../manifest-booking.json" />
     <link rel="icon" href="../assets/img/aura-icon.png" type="image/png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -655,6 +655,10 @@
         deferredPrompt = event;
         installButton.classList.add('visible');
       });
+      window.addEventListener('aura-beforeinstallprompt', (event) => {
+        deferredPrompt = event.detail;
+        installButton.classList.add('visible');
+      });
 
       installButton.addEventListener('click', async () => {
         if (!deferredPrompt) return;
@@ -807,6 +811,14 @@
           });
         }
         return subscription.toJSON();
+      }
+
+      function crearTokenNotificacionAdmin() {
+        const bytes = crypto.getRandomValues(new Uint8Array(16));
+        bytes[6] = (bytes[6] & 0x0f) | 0x40;
+        bytes[8] = (bytes[8] & 0x3f) | 0x80;
+        const hexadecimal = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+        return `${hexadecimal.slice(0, 8)}-${hexadecimal.slice(8, 12)}-${hexadecimal.slice(12, 16)}-${hexadecimal.slice(16, 20)}-${hexadecimal.slice(20)}`;
       }
 
       const serviceOptions = document.getElementById('serviceOptions');
@@ -1098,7 +1110,8 @@
           fecha: fechaElegida,
           hora: horarioElegido,
           notas: document.getElementById('notas').value.trim(),
-          estado: 'pendiente'
+          estado: 'pendiente',
+          admin_notification_token: crearTokenNotificacionAdmin()
         };
 
         if (!payload.nombre || !payload.email || !payload.telefono || !payload.tipo_id || !payload.fecha || !payload.hora) {
@@ -1125,6 +1138,23 @@
           payload.push_subscription = pushSubscription;
           const { error } = await window.auraSupabase.from('turnos').insert([payload]);
           if (error) throw error;
+          try {
+            const { data: notificationResult, error: notificationError } =
+              await window.auraSupabase.functions.invoke('notify-new-booking', {
+                body: { token: payload.admin_notification_token }
+              });
+            if (notificationError || !notificationResult?.sent) {
+              console.warn('La reserva se guardó, pero no se pudo confirmar el aviso al equipo:', notificationError || notificationResult);
+              sessionStorage.setItem('aura-admin-notification-warning', 'true');
+            }
+          } catch (notificationError) {
+            console.warn('La reserva se guardó, pero falló el aviso al equipo:', notificationError);
+            try {
+              sessionStorage.setItem('aura-admin-notification-warning', 'true');
+            } catch (storageError) {
+              console.error('No se pudo guardar el estado del aviso pendiente:', storageError);
+            }
+          }
           window.location.href = './gracias.html';
         } catch (error) {
           console.error('No se pudo confirmar la reserva:', error);

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aura-nails-v10';
+const CACHE_NAME = 'aura-nails-v12';
 const ASSETS = [
   './',
   './index.html',
@@ -8,6 +8,8 @@ const ASSETS = [
   './public/reservar.html',
   './public/gracias.html',
   './manifest.json',
+  './manifest-admin.json',
+  './manifest-booking.json',
   './assets/css/styles.css',
   './assets/css/home.css',
   './assets/js/supabase-config.js',
@@ -54,10 +56,13 @@ self.addEventListener('notificationclick', (event) => {
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
-      const existingClient = clients.find((client) => 'focus' in client);
-      if (existingClient) {
-        existingClient.navigate(target.href);
-        return existingClient.focus();
+      const existingAdminClient = clients.find((client) => {
+        const clientUrl = new URL(client.url);
+        return clientUrl.origin === target.origin && clientUrl.pathname.startsWith('/admin/');
+      });
+      if (existingAdminClient) {
+        existingAdminClient.navigate(target.href);
+        return existingAdminClient.focus();
       }
       return self.clients.openWindow(target.href);
     })

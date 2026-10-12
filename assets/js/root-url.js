@@ -24,6 +24,23 @@
   ]);
   const validRoutes = new Set(routeMap.values());
   const storageKey = 'aura-shell-route';
+  const manifestByRoute = new Map([
+    ['admin/index.html', 'manifest-admin.json'],
+    ['admin/turnos.html', 'manifest-admin.json'],
+    ['admin/clientes.html', 'manifest-admin.json'],
+    ['admin/servicios.html', 'manifest-admin.json'],
+    ['admin/redes.html', 'manifest-admin.json'],
+    ['admin/disenios.html', 'manifest-admin.json'],
+    ['admin/historial.html', 'manifest-admin.json'],
+    ['admin/login.html', 'manifest-admin.json'],
+    ['public/reservar.html', 'manifest-booking.json']
+  ]);
+
+  function setManifest(route) {
+    const manifestName = manifestByRoute.get(route) || 'manifest.json';
+    const manifestLink = document.querySelector('link[rel="manifest"]');
+    if (manifestLink) manifestLink.href = new URL(manifestName, baseUrl).href;
+  }
 
   function relativePath(pathname) {
     return pathname.startsWith(basePath) ? pathname.slice(basePath.length) : null;
@@ -57,7 +74,10 @@
     frame.addEventListener('load', () => {
       if (frame.contentDocument.title) document.title = frame.contentDocument.title;
       const path = relativePath(frame.contentWindow.location.pathname);
-      if (path && validRoutes.has(path)) saveRoute(path);
+      if (path && validRoutes.has(path)) {
+        saveRoute(path);
+        setManifest(path);
+      }
     });
 
     home.addEventListener('click', (event) => {
@@ -72,6 +92,7 @@
 
     const route = readRoute();
     if (route) {
+      setManifest(route);
       home.hidden = true;
       frame.hidden = false;
       frame.src = new URL(route, baseUrl).href;

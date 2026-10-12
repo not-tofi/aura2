@@ -1,0 +1,22 @@
+{
+  "id": "/admin/index.html",
+  "name": "Aura Nails Administración",
+  "short_name": "Aura Admin",
+  "description": "Panel administrativo de Aura Nails",
+  "start_url": "/admin/index.html",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "browser"],
+  "background_color": "#f9f5f3",
+  "theme_color": "#f7d6de",
+  "orientation": "portrait",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "/assets/img/aura-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
